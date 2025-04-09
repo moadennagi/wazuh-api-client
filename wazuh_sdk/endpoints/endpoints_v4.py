@@ -1,8 +1,10 @@
 API_PATHS = {
-    "agents_list": "/agents",
+    "list_agents": "/agents",
+    "list_outdated_agents": "/agents/outdated",
+    "list_agents_distinct": "/agents/stats/distinct",
     "agent_info": "/agents/{agent_id}",
     "agent_add": "/agents",
-    "agent_delete": "/agents/{agent_id}",
+    "delete_agents": "/agents",
     "agent_restart": "/agents/{agent_id}/restart",
     "alerts_search": "/syscheck/events",
     "alerts_summary": "/syscheck/summary",

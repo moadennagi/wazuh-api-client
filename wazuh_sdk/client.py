@@ -1,14 +1,17 @@
 import requests
+from typing import Optional
+
 from .constants import DEFAULT_TIMEOUT, USER_AGENT
 from .exceptions import WazuhError, WazuhConnectionError
 from .utils import get_api_paths
+from .interfaces import ClientInterface
 
 # Import resource classes
 from .resources.agents import Agents
 from .resources.alerts import Alerts
 
-class WazuhClient:
-    def __init__(self, base_url: str, version: str = None, username: str = None, password: str = None, verify: bool = False):
+class WazuhClient(ClientInterface):
+    def __init__(self, base_url: str, version: str, username: str, password: str, verify: Optional[bool] = False):
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
         self.session.verify = verify
@@ -33,7 +36,7 @@ class WazuhClient:
     def _generate_token(self, username: str, password: str) -> str:
         """
         """
-        generate_token_url = self._build_endpoint("generate_token")
+        generate_token_url = self.build_endpoint("generate_token")
         response = self.session.post(generate_token_url, verify=False, auth=(username, password))
         response.raise_for_status()
         token = response.json()["data"]["token"]
@@ -55,7 +58,7 @@ class WazuhClient:
         except Exception as e:
             raise WazuhConnectionError("Failed to detect Wazuh version.") from e
     
-    def _build_endpoint(self, key: str) -> str:
+    def build_endpoint(self, key: str) -> str:
         """
         Construct the full API endpoint URL using the mapping and provided parameters.
         """
@@ -65,7 +68,7 @@ class WazuhClient:
             raise WazuhError(f"Endpoint for key '{key}' not found in API mapping for version {self.version}.")
         return self.base_url + route_template.format(key)
     
-    def _request(self, method: str, endpoint: str, **kwargs):
+    def request(self, method: str, endpoint: str, **kwargs):
         """
         Helper method to make an HTTP request.
         """
