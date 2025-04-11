@@ -1,8 +1,9 @@
-from typing import Optional, Any
+from typing import Optional, Any, List
 from dataclasses import dataclass
 from ..enums import AgentStatus, GroupConfigStatus
 from ..interfaces import AsyncClientInterface
 from ..client import AsyncRequestMaker
+
 
 @dataclass(kw_only=True)
 class BaseQueryParameters:
@@ -20,6 +21,7 @@ class BaseQueryParameters:
             else:
                 query[key] = str(value)
         return query
+
 
 @dataclass(kw_only=True)
 class OsQueryParameters(BaseQueryParameters):
@@ -59,8 +61,8 @@ class CommonListAgentsQueryParams(BaseQueryParameters):
 
 @dataclass(kw_only=True)
 class ListAgentsQueryParams(CommonListAgentsQueryParams):
-    agents_list: Optional[list[str]] = None
-    status: Optional[list[str]] = None
+    agents_list: Optional[List[str]] = None
+    status: Optional[List[str]] = None
     older_than: Optional[str] = None
     os_query_parameters: Optional[OsQueryParameters] = None
     manager: Optional[str] = None
@@ -71,7 +73,7 @@ class ListAgentsQueryParams(CommonListAgentsQueryParams):
     ip: Optional[str] = None
     registerIP: Optional[str] = None
     group_config_status: Optional[GroupConfigStatus] = GroupConfigStatus.SYNCED
-    distinct: bool = False # Look for distinct values.
+    distinct: bool = False  # Look for distinct values.
 
     def to_query_dict(self) -> dict[str, str]:
         """Converts non-None parameters to a dictionary."""
@@ -101,19 +103,25 @@ class ListAgentsQueryParams(CommonListAgentsQueryParams):
             for os_key, os_val in os_dict.get("os", {}).items():
                 query[f"os.{os_key}"] = os_val
         return query
-  
+
 
 @dataclass(kw_only=True)
 class ListAgentsDistinctQueryParams(CommonListAgentsQueryParams):
-    fields: list[str]
+    fields: List[str]
+
 
 @dataclass(kw_only=True)
 class ListOutdatedAgentsQueryParams(CommonListAgentsQueryParams):
     pass
 
 @dataclass(kw_only=True)
+class ListAgentsWithoutGroupQueryParams(CommonListAgentsQueryParams):
+    pass
+
+
+@dataclass(kw_only=True)
 class DeleteAgentsQueryParams(BaseQueryParameters):
-    status: Optional[list[AgentStatus]]
+    status: Optional[List[AgentStatus]]
     agents_list: Optional[list[str]] = None  # list of Agent IDs as strings
     purge: bool = False  # Permanently delete an agent from the key store
 
@@ -129,16 +137,19 @@ class AddAgentBodyParams(BaseQueryParameters):
     name: str
     ip: Optional[str] = None
 
+
 @dataclass
 class Error:
     code: int
     message: str
     remediation: str
 
+
 @dataclass
 class FailedItem:
     error: dict[str, dict[str, Error]]
-    id: list[str] | list[int]
+    id: List[str] | List[int]
+
 
 @dataclass
 class OS:
@@ -151,6 +162,7 @@ class OS:
     name: str
     major: str
 
+
 @dataclass
 class Agent:
     os: OS
@@ -162,7 +174,7 @@ class Agent:
     registerIp: str
     ip: str
     mergedSum: str
-    group: list[str]
+    group: List[str]
     configSum: str
     status: AgentStatus
     name: str
@@ -170,12 +182,14 @@ class Agent:
     version: str
     status_code: int = 0
 
+
 @dataclass
 class ResponseData:
     total_affected_items: int
-    failed_items: list[FailedItem]
+    failed_items: List[FailedItem]
     total_failed_items: int
-    affected_items: list[Agent]
+    affected_items: List[Agent]
+
 
 @dataclass
 class ListAgentResponse:
@@ -191,39 +205,160 @@ class AgentsManager:
         """
         self.async_request_builder = AsyncRequestMaker(client)
 
-    async def list(self, list_agent_params: Optional[ListAgentsQueryParams] = None) -> ListAgentResponse:
+    async def list(
+        self, list_agent_params: Optional[ListAgentsQueryParams] = None, **kwargs
+    ) -> ListAgentResponse:
         """
         Retrieve a list of agents.
+
+        This method accepts either a ListAgentsQueryParams object or individual parameters as keyword arguments.
+
+        Examples:
+            # Using a dataclass
+            params = ListAgentsQueryParams(status=["active"], limit=100)
+            agents = await client.list(params)
+
+            # Using keyword arguments
+            agents = await client.list(status=["active"], limit=100)
+
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.get_agents
         """
+        endpoint = "list_agents"
         if not list_agent_params:
             list_agent_params = ListAgentsQueryParams()
-        res = await self.async_request_builder.get("list_agents", list_agent_params)
+
+        if kwargs:
+            for param, value in kwargs.items():
+                if not hasattr(ListAgentsQueryParams, param):
+                    raise ValueError(
+                        f"Invalid parameter: {param}, keywork argument must be one of : {list(ListAgentsQueryParams.__dataclass_fields__.keys())}"
+                    )
+                setattr(list_agent_params, param, value)
+
+        res = await self.async_request_builder.get(endpoint, list_agent_params)
         response = ListAgentResponse(**res)
         return response
-    
-    async def list_distinct(self, list_agents_distinct_params: ListAgentsDistinctQueryParams) -> ListAgentResponse:
+
+    async def list_distinct(
+        self,
+        fields: Optional[List[str]] = None,
+        list_agents_distinct_params: Optional[ListAgentsDistinctQueryParams] = None,
+        **kwargs,
+    ) -> ListAgentResponse:
         """
         List all the different combinations that agents have for the selected fields.
+
+        This method accepts either a ListAgentsDistinctQueryParams object or individual parameters as keyword arguments.
+
+        One of `fields` or `list_agents_distinct_params` is mandatory, you must provide one. If both are given `fields' takes precedence.
+
+        Examples:
+            # Using a dataclass
+            params = ListAgentsDistinctQueryParams(fields=["active"], limit=100)
+            agents = await client.list(params)
+
+            # Using keyword arguments
+            agents = await client.list(fields=["active"], limit=100)
+
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.get_agent_fields
         """
-        res = await self.async_request_builder.get("list_agents_distinct", list_agents_distinct_params)
+        if not list_agents_distinct_params and not fields:
+            raise ValueError(
+                "At least one parameter should be provided: fields or an instance of ListAgentsDistinctQueryParams"
+            )
+        elif fields and list_agents_distinct_params:
+            # fields takes precedence
+            setattr(list_agents_distinct_params, "fields", fields)
+        elif fields:
+            list_agents_distinct_params = ListAgentsDistinctQueryParams(fields=fields)
+
+        if kwargs:
+            for param, value in kwargs.items():
+                if not hasattr(ListAgentsDistinctQueryParams, param):
+                    raise ValueError(
+                        f"Invalid parameter: {param}, keywork argument must be one of : {list(ListAgentsDistinctQueryParams.__dataclass_fields__.keys())}"
+                    )
+                setattr(list_agents_distinct_params, param, value)
+
+        res = await self.async_request_builder.get(
+            "list_agents_distinct", list_agents_distinct_params
+        )
         response = ListAgentResponse(**res)
         return response
-    
-    async def list_outdated_agents(self, list_outdated_agents: Optional[ListOutdatedAgentsQueryParams] = None) -> ListAgentResponse:
+
+    async def list_outdated_agents(
+        self,
+        list_outdated_agents: Optional[ListOutdatedAgentsQueryParams] = None,
+        **kwargs,
+    ) -> ListAgentResponse:
         """
         Return the list of outdated agents.
+
+        This method accepts either a ListAgentsQueryParams object or individual parameters as keyword arguments.
+
+        Examples:
+            # Using a dataclass
+            params = ListOutdatedAgentsQueryParams(limit=100)
+            agents = await client.list(params)
+
+            # Using keyword arguments
+            agents = await client.list(limit=100)
+        
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.get_agent_outdated
         """
         if not list_outdated_agents:
             list_outdated_agents = ListOutdatedAgentsQueryParams()
-        res = await self.async_request_builder.get("list_outdated_agents", list_outdated_agents)
+        
+        if kwargs:
+            for param, value in kwargs.items():
+                if not hasattr(ListAgentsDistinctQueryParams, param):
+                    raise ValueError(
+                        f"Invalid parameter: {param}, keywork argument must be one of : {list(ListOutdatedAgentsQueryParams.__dataclass_fields__.keys())}"
+                    )
+                setattr(list_outdated_agents, param, value)
+
+        res = await self.async_request_builder.get(
+            "list_outdated_agents", list_outdated_agents
+        )
         response = ListAgentResponse(**res)
         return response
-    
-    def list_agents_without_group(self):
-        pass
+
+    async def list_agents_without_group(
+            self,
+        list_outdated_agents: Optional[ListAgentsWithoutGroupQueryParams] = None,
+        **kwargs,
+    ):
+        """
+        Return a list with all the available agents without an assigned group.
+
+        This method accepts either a ListAgentsWithoutGroupQueryParams object or individual parameters as keyword arguments.
+
+        Examples:
+            # Using a dataclass
+            params = ListAgentsWithoutGroupQueryParams(limit=100)
+            agents = await client.list(params)
+
+            # Using keyword arguments
+            agents = await client.list(limit=100)
+        
+        https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.get_agent_no_group
+        """
+        if not list_outdated_agents:
+            list_outdated_agents = ListAgentsWithoutGroupQueryParams()
+        
+        if kwargs:
+            for param, value in kwargs.items():
+                if not hasattr(ListAgentsDistinctQueryParams, param):
+                    raise ValueError(
+                        f"Invalid parameter: {param}, keywork argument must be one of : {list(ListAgentsWithoutGroupQueryParams.__dataclass_fields__.keys())}"
+                    )
+                setattr(list_outdated_agents, param, value)
+
+        res = await self.async_request_builder.get(
+            "list_agents_without_group", list_outdated_agents
+        )
+        response = ListAgentResponse(**res)
+        return response
 
     def delete(self):
         pass
@@ -273,7 +408,6 @@ class AgentsManager:
     def add_agent_quick(self):
         pass
 
-
     def restart_agents_in_node(self):
         pass
 
@@ -288,7 +422,7 @@ class AgentsManager:
 
     def summarize_agents_status(self):
         pass
-    
+
     def get_upgrade_results(self):
         """
         Return the agents upgrade results

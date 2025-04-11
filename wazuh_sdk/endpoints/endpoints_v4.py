@@ -2,6 +2,7 @@ API_PATHS = {
     "list_agents": "/agents",
     "list_outdated_agents": "/agents/outdated",
     "list_agents_distinct": "/agents/stats/distinct",
+    "list_agents_without_group": "/agents/no_group",
     
     "agent_info": "/agents/{agent_id}",
     "agent_add": "/agents",
