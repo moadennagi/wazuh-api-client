@@ -1,7 +1,8 @@
 from typing import Optional, Any
 from dataclasses import dataclass
 from ..enums import AgentStatus, GroupConfigStatus
-from ..interfaces import ClientInterface, AsyncClientInterface
+from ..interfaces import AsyncClientInterface
+from ..client import AsyncRequestMaker
 
 @dataclass(kw_only=True)
 class BaseQueryParameters:
@@ -128,35 +129,69 @@ class AddAgentBodyParams(BaseQueryParameters):
     name: str
     ip: Optional[str] = None
 
-class AsyncRequestBuilder:
-    def __init__(self, client: AsyncClientInterface):
-        self.client = client
+@dataclass
+class Error:
+    code: int
+    message: str
+    remediation: str
 
-    async def get(self, endpoint_name: str, query_params: Any) -> Any:
-        endpoint = self.client.build_endpoint(endpoint_name)
-        params = query_params.to_query_dict()
-        res = await self.client.request("GET", endpoint, params=params)
-        return res
+@dataclass
+class FailedItem:
+    error: dict[str, dict[str, Error]]
+    id: list[str] | list[int]
 
-class RequestBuilder:
-    def __init__(self, client: ClientInterface):
-        self.client = client
+@dataclass
+class OS:
+    arch: str
+    minor: str
+    codename: str
+    version: str
+    platform: str
+    uname: str
+    name: str
+    major: str
 
-    def get(self, endpoint_name: str, query_params: Any) -> Any:
-        endpoint = self.client.build_endpoint(endpoint_name)
-        params = query_params.to_query_dict()
-        return self.client.request("GET", endpoint, params=params)
+@dataclass
+class Agent:
+    os: OS
+    group_config_status: GroupConfigStatus
+    lastKeepAlive: str
+    dateAdd: str
+    node_name: str
+    manager: str
+    registerIp: str
+    ip: str
+    mergedSum: str
+    group: list[str]
+    configSum: str
+    status: AgentStatus
+    name: str
+    id: str
+    version: str
+    status_code: int = 0
+
+@dataclass
+class ResponseData:
+    total_affected_items: int
+    failed_items: list[FailedItem]
+    total_failed_items: int
+    affected_items: list[Agent]
+
+@dataclass
+class ListAgentResponse:
+    message: str
+    error: int
+    data: ResponseData
 
 
-class Agents:
+class AgentsManager:
     def __init__(self, client: AsyncClientInterface):
         """
         Initialize with a reference to the WazuhClient instance.
         """
-        self.client = client
-        self.async_request_builder = AsyncRequestBuilder(client)
+        self.async_request_builder = AsyncRequestMaker(client)
 
-    async def list(self, list_agent_params: Optional[ListAgentsQueryParams] = None):
+    async def list(self, list_agent_params: Optional[ListAgentsQueryParams] = None) -> ListAgentResponse:
         """
         Retrieve a list of agents.
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.get_agents
@@ -164,23 +199,28 @@ class Agents:
         if not list_agent_params:
             list_agent_params = ListAgentsQueryParams()
         res = await self.async_request_builder.get("list_agents", list_agent_params)
-        return res
+        response = ListAgentResponse(**res)
+        return response
     
-    def list_distinct(self, list_agents_distinct_params: ListAgentsDistinctQueryParams):
+    async def list_distinct(self, list_agents_distinct_params: ListAgentsDistinctQueryParams) -> ListAgentResponse:
         """
         List all the different combinations that agents have for the selected fields.
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.get_agent_fields
         """
-        return self.request_builder.get("list_agents_distinct", list_agents_distinct_params)
+        res = await self.async_request_builder.get("list_agents_distinct", list_agents_distinct_params)
+        response = ListAgentResponse(**res)
+        return response
     
-    def list_outdated_agents(self, list_outdated_agents: Optional[ListOutdatedAgentsQueryParams] = None):
+    async def list_outdated_agents(self, list_outdated_agents: Optional[ListOutdatedAgentsQueryParams] = None) -> ListAgentResponse:
         """
         Return the list of outdated agents.
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.get_agent_outdated
         """
         if not list_outdated_agents:
             list_outdated_agents = ListOutdatedAgentsQueryParams()
-        return self.request_builder.get("list_outdated_agents", list_outdated_agents)
+        res = await self.async_request_builder.get("list_outdated_agents", list_outdated_agents)
+        response = ListAgentResponse(**res)
+        return response
     
     def list_agents_without_group(self):
         pass

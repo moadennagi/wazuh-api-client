@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Coroutine, Any
 
 class ClientInterface(ABC):
 
@@ -31,4 +32,19 @@ class AsyncClientInterface(ABC):
         """
         Helper method to make an HTTP request.
         """
+        pass
+
+class AsyncRequestBuilderInterface:
+    def __init__(self, client: AsyncClientInterface):
+        pass
+
+    async def get(self, endpoint_name: str, query_params: Any) -> Coroutine | None:
+       pass
+
+
+class RequestBuilder:
+    def __init__(self, client: ClientInterface):
+        pass
+
+    def get(self, endpoint_name: str, query_params: Any) -> Any:
         pass
