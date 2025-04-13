@@ -1,6 +1,6 @@
 from typing import Optional, Any, List
-from dataclasses import dataclass
-from ..enums import AgentStatus, GroupConfigStatus
+from dataclasses import dataclass, field
+from ..enums import AgentStatus, GroupConfigStatus, AgentComponent, AgentConfiguration
 from ..interfaces import AsyncClientInterface
 from ..client import AsyncRequestMaker
 
@@ -114,6 +114,7 @@ class ListAgentsDistinctQueryParams(CommonListAgentsQueryParams):
 class ListOutdatedAgentsQueryParams(CommonListAgentsQueryParams):
     pass
 
+
 @dataclass(kw_only=True)
 class ListAgentsWithoutGroupQueryParams(CommonListAgentsQueryParams):
     pass
@@ -121,9 +122,21 @@ class ListAgentsWithoutGroupQueryParams(CommonListAgentsQueryParams):
 
 @dataclass(kw_only=True)
 class DeleteAgentsQueryParams(BaseQueryParameters):
-    status: Optional[List[AgentStatus]]
-    agents_list: Optional[list[str]] = None  # list of Agent IDs as strings
-    purge: bool = False  # Permanently delete an agent from the key store
+    pretty: Optional[bool] = False
+    wait_for_complete: Optional[bool] = False
+    older_than: Optional[str] = None
+    os_query_parameters: Optional[OsQueryParameters] = None
+    q: Optional[str] = None  # Query string (e.g. 'status=active')
+    manager: Optional[str] = None
+    version: Optional[str] = None
+    group: Optional[str] = None
+    node_name: Optional[str] = None
+    name: Optional[str] = None
+    ip: Optional[str] = None
+    registerIP: Optional[str] = None
+    agents_list: Optional[List[str]] = None
+    status: Optional[List[AgentStatus]] = None
+    purge: Optional[bool] = False
 
 
 @dataclass(kw_only=True)
@@ -198,6 +211,61 @@ class ListAgentResponse:
     data: ResponseData
 
 
+@dataclass
+class AddAgentData:
+    id: str
+    key: str
+
+
+@dataclass
+class AddAgentResponse:
+    data: AddAgentData
+    error: int
+
+
+@dataclass
+class Server:
+    address: str
+    port: int
+    max_retries: int
+    retry_interval: int
+    protocol: str
+
+
+@dataclass
+class Enrollment:
+    enabled: str
+    delay_after_enrollment: int
+    port: int
+    ssl_cipher: str
+    auto_method: str
+
+
+@dataclass
+class Client:
+    config_profile: str = field(metadata={"json": "config-profile"})
+    notify_time: int
+    time_reconnect: int = field(metadata={"json": "time-reconnect"})
+    force_reconnect_interval: int
+    ip_update_interval: int
+    auto_restart: str
+    remote_conf: str
+    crypto_method: str
+    server: List[Server]
+    enrollment: List[Enrollment]
+
+
+@dataclass
+class AgentCofigurationData:
+    client: Client
+
+
+@dataclass
+class AgentConfigurationResponse:
+    data: AgentCofigurationData
+    error: int
+
+
 class AgentsManager:
     def __init__(self, client: AsyncClientInterface):
         """
@@ -234,8 +302,8 @@ class AgentsManager:
                         f"Invalid parameter: {param}, keywork argument must be one of : {list(ListAgentsQueryParams.__dataclass_fields__.keys())}"
                     )
                 setattr(list_agent_params, param, value)
-
-        res = await self.async_request_builder.get(endpoint, list_agent_params)
+        params = list_agent_params.to_query_dict()
+        res = await self.async_request_builder.get(endpoint, params)
         response = ListAgentResponse(**res)
         return response
 
@@ -262,6 +330,8 @@ class AgentsManager:
 
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.get_agent_fields
         """
+        params = None
+
         if not list_agents_distinct_params and not fields:
             raise ValueError(
                 "At least one parameter should be provided: fields or an instance of ListAgentsDistinctQueryParams"
@@ -280,15 +350,15 @@ class AgentsManager:
                     )
                 setattr(list_agents_distinct_params, param, value)
 
-        res = await self.async_request_builder.get(
-            "list_agents_distinct", list_agents_distinct_params
-        )
+        if list_agents_distinct_params:
+            params = list_agents_distinct_params.to_query_dict()
+        res = await self.async_request_builder.get("list_agents_distinct", params)
         response = ListAgentResponse(**res)
         return response
 
-    async def list_outdated_agents(
+    async def list_outdated(
         self,
-        list_outdated_agents: Optional[ListOutdatedAgentsQueryParams] = None,
+        list_outdated_agents_params: Optional[ListOutdatedAgentsQueryParams] = None,
         **kwargs,
     ) -> ListAgentResponse:
         """
@@ -303,29 +373,32 @@ class AgentsManager:
 
             # Using keyword arguments
             agents = await client.list(limit=100)
-        
+
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.get_agent_outdated
         """
-        if not list_outdated_agents:
-            list_outdated_agents = ListOutdatedAgentsQueryParams()
-        
+        params = None
+        if not list_outdated_agents_params:
+            list_outdated_agents_params = ListOutdatedAgentsQueryParams()
+
         if kwargs:
             for param, value in kwargs.items():
                 if not hasattr(ListAgentsDistinctQueryParams, param):
                     raise ValueError(
                         f"Invalid parameter: {param}, keywork argument must be one of : {list(ListOutdatedAgentsQueryParams.__dataclass_fields__.keys())}"
                     )
-                setattr(list_outdated_agents, param, value)
+                setattr(list_outdated_agents_params, param, value)
+        if list_outdated_agents_params:
+            params = list_outdated_agents_params.to_query_dict()
 
         res = await self.async_request_builder.get(
-            "list_outdated_agents", list_outdated_agents
+            "list_outdated_agents", params
         )
         response = ListAgentResponse(**res)
         return response
 
-    async def list_agents_without_group(
-            self,
-        list_outdated_agents: Optional[ListAgentsWithoutGroupQueryParams] = None,
+    async def list_without_group(
+        self,
+        list_agents_without_group_params: Optional[ListAgentsWithoutGroupQueryParams] = None,
         **kwargs,
     ):
         """
@@ -340,34 +413,103 @@ class AgentsManager:
 
             # Using keyword arguments
             agents = await client.list(limit=100)
-        
+
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.get_agent_no_group
         """
-        if not list_outdated_agents:
-            list_outdated_agents = ListAgentsWithoutGroupQueryParams()
-        
+        params = None
+        if not list_agents_without_group_params:
+            list_agents_without_group_params = ListAgentsWithoutGroupQueryParams()
+
         if kwargs:
             for param, value in kwargs.items():
                 if not hasattr(ListAgentsDistinctQueryParams, param):
                     raise ValueError(
                         f"Invalid parameter: {param}, keywork argument must be one of : {list(ListAgentsWithoutGroupQueryParams.__dataclass_fields__.keys())}"
                     )
-                setattr(list_outdated_agents, param, value)
-
+                setattr(list_agents_without_group_params, param, value)
+    
+        if list_agents_without_group_params:
+            params = list_agents_without_group_params.to_query_dict()
         res = await self.async_request_builder.get(
-            "list_agents_without_group", list_outdated_agents
+            "list_agents_without_group", params
         )
         response = ListAgentResponse(**res)
         return response
 
-    def delete(self):
-        pass
+    async def delete(
+        self,
+        agents_list: List[str],
+        status: List[AgentStatus],
+        purge: bool = False,
+        delete_agents_params: Optional[DeleteAgentsQueryParams] = None,
+        **kwargs,
+    ):
+        """
+        Delete all agents or a list of them based on optional criteria
+        https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.delete_agents
+        """
+        if not delete_agents_params:
+            delete_agents_params = DeleteAgentsQueryParams()
 
-    def add(self):
-        pass
+        delete_agents_params.agents_list = agents_list
+        delete_agents_params.status = status
+        delete_agents_params.purge = purge
 
-    def get_active_configuration(self):
-        pass
+        if kwargs:
+            for param, value in kwargs.items():
+                if not hasattr(DeleteAgentsQueryParams, param):
+                    raise ValueError(
+                        f"Invalid parameter: {param}, keywork argument must be one of : {list(DeleteAgentsQueryParams.__dataclass_fields__.keys())}"
+                    )
+                setattr(delete_agents_params, param, value)
+
+        res = await self.async_request_builder.delete(
+            "delete_agents", delete_agents_params
+        )
+        response = ListAgentResponse(**res)
+        return response
+
+    async def add(
+        self,
+        name: str,
+        ip: str,
+        pretty: bool = False,
+        wait_for_complete: bool = False,
+    ) -> AddAgentResponse:
+        """
+        Add a new agent.
+        """
+        add_agent_request_body = AddAgentBodyParams(name=name, ip=ip)
+        add_agent_query_params = AddAgentQueryParams(
+            pretty=pretty, wait_for_complete=wait_for_complete
+        )
+        res = await self.async_request_builder.post(
+            "add_agent",
+            query_params=add_agent_query_params,
+            body=add_agent_request_body.to_query_dict(),
+        )
+        response = AddAgentResponse(**res)
+        return response
+
+    async def get_active_configuration(
+        self,
+        agent_id: str,
+        component: AgentComponent,
+        configuration: AgentConfiguration,
+        pretty: bool = False,
+        wait_for_complete: bool = False,
+    ) -> AgentConfigurationResponse:
+        """
+        Return the active configuration the agent is currently using.
+        This can be different from the configuration present in the configuration file,
+        if it has been modified and the agent has not been restarted yet.
+        https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.add_agent
+        """
+        params: dict[str, bool] = dict(pretty=pretty, wait_for_complete=wait_for_complete)
+        path_parameters: dict[str, str | int] = dict(agent_id=str(agent_id), component=str(component), configuration=str(configuration))
+        res = await self.async_request_builder.get("get_active_configuration", query_params=params, path_params=path_parameters)
+        response = AgentConfigurationResponse(**res)
+        return response
 
     def remove_agent_from_groups(self):
         pass

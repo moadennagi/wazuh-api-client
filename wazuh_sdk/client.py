@@ -1,4 +1,5 @@
 import requests
+import dataclasses
 
 from ssl import SSLContext
 from httpx import AsyncClient, RequestError
@@ -8,7 +9,12 @@ from .constants import DEFAULT_TIMEOUT, USER_AGENT
 from .exceptions import WazuhError, WazuhConnectionError
 from .utils import get_api_paths
 
-from .interfaces import ClientInterface, AsyncClientInterface
+from .interfaces import (
+    ClientInterface,
+    AsyncClientInterface,
+    AsyncRequestBuilderInterface,
+    RequestBuilderInterface,
+)
 
 
 class WazuhClient(ClientInterface):
@@ -128,13 +134,13 @@ class AsyncWazuhClient(AsyncClientInterface):
             self.api_paths = get_api_paths(self.version)
         except ValueError as ve:
             raise WazuhError(str(ve))
-        
+
         self.authenticated = True
 
     async def _generate_token(self, username: str, password: str) -> str:
         if self.client is None:
             raise RuntimeError("Async client is not initialized")
-    
+
         url = self.build_endpoint("generate_token")
         response = await self.client.post(url, auth=(username, password))
         response.raise_for_status()
@@ -154,7 +160,7 @@ class AsyncWazuhClient(AsyncClientInterface):
         except Exception as e:
             raise WazuhConnectionError("Failed to detect Wazuh version.") from e
 
-    def build_endpoint(self, key: str) -> str:
+    def build_endpoint(self, key: str, params: Optional[dict[str, str | int]] = None) -> str:
         """
         Construct the full API endpoint URL using the mapping and provided parameters.
         """
@@ -164,7 +170,12 @@ class AsyncWazuhClient(AsyncClientInterface):
             raise WazuhError(
                 f"Endpoint for key '{key}' not found in API mapping for version {self.version}."
             )
-        return self.base_url + route_template.format(key)
+        res = self.base_url
+        if params:
+            res += route_template.format(**params)
+        else:
+            res += route_template
+        return res
 
     async def request(self, method: str, endpoint: str, **kwargs):
         if self.client is None:
@@ -189,18 +200,45 @@ class AsyncWazuhClient(AsyncClientInterface):
         await self.close()
 
 
-class AsyncRequestMaker:
+class AsyncRequestMaker(AsyncRequestBuilderInterface):
     def __init__(self, client: AsyncClientInterface):
         self.client = client
 
-    async def get(self, endpoint_name: str, query_params: Any) -> Any:
-        endpoint = self.client.build_endpoint(endpoint_name)
+    async def get(
+        self,
+        endpoint_name: str,
+        query_params: Optional[dict] = None,
+        path_params: Optional[dict[str, str | int]] = None,
+    ) -> Any:
+        endpoint = self.client.build_endpoint(endpoint_name, path_params)
+        res = await self.client.request("GET", endpoint, params=query_params)
+        return res
+
+    async def delete(
+        self,
+        endpoint_name: str,
+        query_params: Any,
+        path_params: Optional[dict[str, str | int]] = None,
+    ) -> Any:
+        endpoint = self.client.build_endpoint(endpoint_name, path_params)
         params = query_params.to_query_dict()
-        res = await self.client.request("GET", endpoint, params=params)
+        res = await self.client.request("DELETE", endpoint, params=params)
+        return res
+
+    async def post(
+        self,
+        endpoint_name: str,
+        query_params: Any,
+        body: dict[str, Any],
+        path_params: Optional[dict[str, str | int]] = None,
+    ) -> Any:
+        endpoint = self.client.build_endpoint(endpoint_name, path_params)
+        params = query_params.to_query_dict()
+        res = await self.client.request("POST", endpoint, params=params, json=body)
         return res
 
 
-class RequestMaker:
+class RequestMaker(RequestBuilderInterface):
     def __init__(self, client: ClientInterface):
         self.client = client
 
