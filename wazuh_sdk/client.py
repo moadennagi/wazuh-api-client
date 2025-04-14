@@ -250,7 +250,7 @@ class AsyncRequestMaker(AsyncRequestBuilderInterface):
         self,
         endpoint_name: str,
         query_params: Any,
-        body: dict[str, Any],
+        body: Optional[dict[str, Any]] = None,
         path_params: Optional[dict[str, str | int]] = None,
     ) -> Any:
         params = None
@@ -266,7 +266,7 @@ class AsyncRequestMaker(AsyncRequestBuilderInterface):
         self,
         endpoint_name: str,
         query_params: Any,
-        path_params: dict[str, str | int],
+        path_params: Optional[dict[str, str | int]] = None,
         body: Optional[dict[str, Any]] = None,
     ) -> Any:
         params = None

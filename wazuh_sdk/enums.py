@@ -69,3 +69,8 @@ class AgentConfiguration(Enum):
 class DaemonsList(Enum):
     WAZUH_ANALYSISD = "wazuh-analysisd"
     WAZUH_REMOTED = "wazuh-remoted"
+
+
+class StatsComponent(Enum):
+    LOGCOLLECTOR = "logcollector"
+    AGENT = "agent"

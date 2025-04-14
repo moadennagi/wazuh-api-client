@@ -1,13 +1,19 @@
 from typing import Optional, Any, List
 from dataclasses import dataclass, field
-from ..enums import AgentStatus, GroupConfigStatus, AgentComponent, AgentConfiguration
+from ..enums import (
+    AgentStatus,
+    GroupConfigStatus,
+    AgentComponent,
+    AgentConfiguration,
+    StatsComponent,
+)
 from ..interfaces import AsyncClientInterface
 from ..client import AsyncRequestMaker
 from ..endpoints.endpoints_v4 import V4ApiPaths
 
 
 @dataclass(kw_only=True)
-class BaseQueryParameters:
+class ToDictDataClass:
     def to_query_dict(self) -> dict[str, Any]:
         query: dict[str, str] = {}
         for key, value in vars(self).items():
@@ -19,13 +25,15 @@ class BaseQueryParameters:
                 )
             elif isinstance(value, bool):
                 query[key] = str(value).lower()
+            elif hasattr(value, "to_query_dict"):
+                query[key] = value.to_query_dict()
             else:
                 query[key] = str(value)
         return query
 
 
 @dataclass(kw_only=True)
-class OsQueryParameters(BaseQueryParameters):
+class OsQueryParameters(ToDictDataClass):
     platform: Optional[str] = None
     version: Optional[str] = None
     name: Optional[str] = None
@@ -40,7 +48,7 @@ class OsQueryParameters(BaseQueryParameters):
 
 
 @dataclass(kw_only=True)
-class CommonListAgentsQueryParams(BaseQueryParameters):
+class CommonListAgentsQueryParams(ToDictDataClass):
     pretty: Optional[bool] = False
     wait_for_complete: Optional[bool] = False
     offset: Optional[int] = 0
@@ -122,7 +130,7 @@ class ListAgentsWithoutGroupQueryParams(CommonListAgentsQueryParams):
 
 
 @dataclass(kw_only=True)
-class DeleteAgentsQueryParams(BaseQueryParameters):
+class DeleteAgentsQueryParams(ToDictDataClass):
     pretty: Optional[bool] = False
     wait_for_complete: Optional[bool] = False
     older_than: Optional[str] = None
@@ -141,15 +149,28 @@ class DeleteAgentsQueryParams(BaseQueryParameters):
 
 
 @dataclass(kw_only=True)
-class AddAgentQueryParams(BaseQueryParameters):
+class AddAgentQueryParams(ToDictDataClass):
     pretty: Optional[bool] = False
     wait_for_complete: Optional[bool] = False
 
 
 @dataclass(kw_only=True)
-class AddAgentBodyParams(BaseQueryParameters):
+class AddAgentBodyParams(ToDictDataClass):
     name: str
     ip: Optional[str] = None
+
+
+@dataclass(kw_only=True)
+class DisconnectedTime(ToDictDataClass):
+    enabled: bool = True
+    value: str = "1h"
+
+
+@dataclass(kw_only=True)
+class AgentInsertForce(ToDictDataClass):
+    enabled: bool = True
+    disconnected_time: DisconnectedTime = field(default_factory=DisconnectedTime)
+    after_registration_time: str = "1h"
 
 
 @dataclass
@@ -647,26 +668,143 @@ class AgentsManager:
         response = AgentResponse(**res)
         return response
 
+    async def get_agent_component_stats(
+        self,
+        agent_id: str,
+        component: StatsComponent,
+        pretty: bool = False,
+        wait_for_complete: bool = False,
+    ) -> AgentResponse:
+        """
+        Return Wazuh's `component` statistical information from agent `agent_id`.
+        """
+        path_parameters: dict[str, str | int] = dict(
+            agent_id=agent_id, component=str(component)
+        )
+        params: dict[str, bool] = dict(
+            pretty=pretty,
+            wait_for_complete=wait_for_complete,
+        )
+        res = await self.async_request_builder.get(
+            V4ApiPaths.GET_AGENT_COMPONENT_STATS.value,
+            query_params=params,
+            path_params=path_parameters,
+        )
+        response = AgentResponse(**res)
+        return response
+
     def upgrade_agents(self):
-        pass
+        raise NotImplementedError()
 
     def upgrade_agents_custom(self):
-        pass
+        raise NotImplementedError()
 
     def check_user_permission_to_uninstall_agents(self):
-        pass
+        raise NotImplementedError()
 
-    def remove_agents_from_group(self):
-        pass
+    async def remove_agents_from_group(
+        self,
+        agents_list: List[str],
+        group_id: str,
+        pretty: bool = False,
+        wait_for_complete: bool = False,
+    ) -> AgentResponse:
+        """
+        Remove all agents assignment or a list of them from the specified group.
+        """
+        params: dict[str, str | bool | List[str]] = dict(
+            pretty=pretty,
+            wait_for_complete=wait_for_complete,
+            agents_list=agents_list,
+            group_id=group_id,
+        )
+        res = await self.async_request_builder.delete(
+            V4ApiPaths.REMOVE_AGENTS_FROM_GROUP.value, query_params=params
+        )
+        response = AgentResponse(**res)
+        return response
 
-    def restart_agents_in_group(self):
-        pass
+    async def assign_agents_to_group(
+        self,
+        group_id: str,
+        agents_list: List[str],
+        force_single_group: bool = False,
+        pretty: bool = False,
+        wait_for_complete: bool = False,
+    ) -> AgentResponse:
+        """
+        Assign all agents or a list of them to the specified group.
+        """
+        params: dict[str, Any] = dict(
+            pretty=pretty,
+            wait_for_complete=wait_for_complete,
+            agents_list=agents_list,
+            group_id=group_id,
+            force_single_group=force_single_group,
+        )
+        res = await self.async_request_builder.put(
+            V4ApiPaths.ASSIGN_AGENT_TO_GROUP.value, query_params=params
+        )
+        response = AgentResponse(**res)
+        return response
 
-    def add_agent_full(self):
-        pass
+    async def restart_agents_in_group(
+        self, group_id: str, pretty: bool = False, wait_for_complete: bool = False
+    ) -> AgentResponse:
+        """
+        Restart all agents which belong to a given group.
+        """
+        path_parameters: dict[str, str | int] = dict(group_id=group_id)
+        params: dict[str, bool] = dict(
+            pretty=pretty, wait_for_complete=wait_for_complete
+        )
+        res = await self.async_request_builder.put(
+            V4ApiPaths.RESTART_AGENTS_IN_GROUP.value,
+            path_params=path_parameters,
+            query_params=params,
+        )
+        response = AgentResponse(**res)
+        return response
 
-    def add_agent_quick(self):
-        pass
+    async def add_agent_full(
+        self,
+        id: str,
+        key: str,
+        name: str,
+        ip: str,
+        force: AgentInsertForce,
+        pretty: bool = False,
+        wait_for_complete: bool = False,
+    ) -> AddAgentResponse:
+        """
+        Add an agent specifying its name, ID and IP.
+        If an agent with the same name, the same ID or the same IP already exists, replace it using the force parameter.
+        """
+        params: dict[str, bool] = dict(
+            pretty=pretty, wait_for_complete=wait_for_complete
+        )
+        force_data = force.to_query_dict()
+        body: dict[str, Any] = dict(id=id, key=key, name=name, ip=ip, force=force_data)
+        res = await self.async_request_builder.post(
+            V4ApiPaths.ADD_AGENT_FULL.value, query_params=params, body=body
+        )
+        response = AddAgentResponse(**res)
+        return response
+
+    async def add_agent_quick(
+        self, agent_name: str, pretty: bool = False, wait_for_complete: bool = False
+    ) -> AddAgentResponse:
+        """
+        Add a new agent with name `agent_name`. This agent will use any as `IP`.
+        """
+        params: dict[str, bool | str] = dict(
+            pretty=pretty, wait_for_complete=wait_for_complete, agent_name=agent_name
+        )
+        res = await self.async_request_builder.post(
+            V4ApiPaths.ADD_AGENT_QUICK.value, query_params=params
+        )
+        response = AddAgentResponse(**res)
+        return response
 
     def restart_agents_in_node(self):
         pass
