@@ -25,6 +25,8 @@ class V4ApiPaths(Enum):
     RESTART_AGENTS = "restart_agents"
     SUMMARIZE_AGENTS_OS = "summarize_agents_os"
     SUMMARIZE_AGENTS_STATUS = "summarize_agents_status"
+    RUN_SCAN = "run_scan"
+    GET_SCAN_RESULTS = "get_sca_results"
    
     GENERATE_TOKEN = "/security/user/authenticate"
 
@@ -53,6 +55,8 @@ API_PATHS = {
     V4ApiPaths.RESTART_AGENTS.value: "/agents/restart",
     V4ApiPaths.SUMMARIZE_AGENTS_OS.value: "/agents/summary/os",
     V4ApiPaths.SUMMARIZE_AGENTS_STATUS.value: "/agents/summary/status",
+    V4ApiPaths.RUN_SCAN.value: "/syscheck",
+    V4ApiPaths.GET_SCAN_RESULTS.value: "/syscheck/{agent_id}",
     
     # Additional endpoints for v4 can be added here.
     "generate_token": "/security/user/authenticate"

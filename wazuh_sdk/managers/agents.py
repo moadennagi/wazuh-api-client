@@ -10,26 +10,8 @@ from ..enums import (
 from ..interfaces import AsyncClientInterface
 from ..client import AsyncRequestMaker
 from ..endpoints.endpoints_v4 import V4ApiPaths
-
-
-@dataclass(kw_only=True)
-class ToDictDataClass:
-    def to_query_dict(self) -> dict[str, Any]:
-        query: dict[str, str] = {}
-        for key, value in vars(self).items():
-            if value is None:
-                continue
-            if isinstance(value, list):
-                query[key] = ",".join(
-                    v.value if hasattr(v, "value") else str(v) for v in value
-                )
-            elif isinstance(value, bool):
-                query[key] = str(value).lower()
-            elif hasattr(value, "to_query_dict"):
-                query[key] = value.to_query_dict()
-            else:
-                query[key] = str(value)
-        return query
+from ..query import ToDictDataClass, PaginationQueryParams, CommonQueryParams
+from ..response import AgentResponse, AddAgentResponse, AgentConfigurationResponse
 
 
 @dataclass(kw_only=True)
@@ -48,17 +30,7 @@ class OsQueryParameters(ToDictDataClass):
 
 
 @dataclass(kw_only=True)
-class CommonListAgentsQueryParams(ToDictDataClass):
-    pretty: Optional[bool] = False
-    wait_for_complete: Optional[bool] = False
-    offset: Optional[int] = 0
-    limit: Optional[int] = 500  # max 100000, recommended not to exceed 500
-    sort: Optional[str] = (
-        None  # string; use +/- for sorting order and dot notation for nested fields
-    )
-    search: Optional[str] = None  # string; prepend "-" for complementary search
-    select: Optional[list[str]] = None
-    q: Optional[str] = None  # Query string (e.g. 'status=active')
+class CommonListAgentsQueryParams(PaginationQueryParams, CommonQueryParams):
 
     def __post_init__(self):
         # Validation logic
@@ -71,7 +43,7 @@ class CommonListAgentsQueryParams(ToDictDataClass):
 @dataclass(kw_only=True)
 class ListAgentsQueryParams(CommonListAgentsQueryParams):
     agents_list: Optional[List[str]] = None
-    status: Optional[List[str]] = None
+    status: Optional[List[AgentStatus]] = None
     older_than: Optional[str] = None
     os_query_parameters: Optional[OsQueryParameters] = None
     manager: Optional[str] = None
@@ -84,9 +56,9 @@ class ListAgentsQueryParams(CommonListAgentsQueryParams):
     group_config_status: Optional[GroupConfigStatus] = GroupConfigStatus.SYNCED
     distinct: bool = False  # Look for distinct values.
 
-    def to_query_dict(self) -> dict[str, str]:
+    def to_query_dict(self) -> dict[str, str | bool]:
         """Converts non-None parameters to a dictionary."""
-        query: dict[str, str] = {}
+        query: dict[str, str | bool] = {}
 
         for key, value in vars(self).items():
             if value is None or key == "os_query_parameters":
@@ -103,7 +75,7 @@ class ListAgentsQueryParams(CommonListAgentsQueryParams):
                     for elem in value
                 )
             elif isinstance(value, bool):
-                query[key] = str(value).lower()
+                query[key] = value
             else:
                 query[key] = str(value)
 
@@ -171,122 +143,6 @@ class AgentInsertForce(ToDictDataClass):
     enabled: bool = True
     disconnected_time: DisconnectedTime = field(default_factory=DisconnectedTime)
     after_registration_time: str = "1h"
-
-
-@dataclass
-class Error:
-    code: int
-    message: str
-    remediation: str
-
-
-@dataclass
-class FailedItem:
-    error: dict[str, dict[str, Error]]
-    id: List[str] | List[int]
-
-
-@dataclass
-class OS:
-    arch: str
-    minor: str
-    codename: str
-    version: str
-    platform: str
-    uname: str
-    name: str
-    major: str
-
-
-@dataclass
-class Agent:
-    os: OS
-    group_config_status: GroupConfigStatus
-    lastKeepAlive: str
-    dateAdd: str
-    node_name: str
-    manager: str
-    registerIp: str
-    ip: str
-    mergedSum: str
-    group: List[str]
-    configSum: str
-    status: AgentStatus
-    name: str
-    id: str
-    version: str
-    status_code: int = 0
-
-
-@dataclass
-class ResponseData:
-    total_affected_items: int
-    failed_items: List[FailedItem]
-    total_failed_items: int
-    affected_items: List[Agent]
-
-
-@dataclass
-class AgentResponse:
-    message: str
-    error: int
-    data: ResponseData
-
-
-@dataclass
-class AddAgentData:
-    id: str
-    key: str
-
-
-@dataclass
-class AddAgentResponse:
-    data: AddAgentData
-    error: int
-
-
-@dataclass
-class Server:
-    address: str
-    port: int
-    max_retries: int
-    retry_interval: int
-    protocol: str
-
-
-@dataclass
-class Enrollment:
-    enabled: str
-    delay_after_enrollment: int
-    port: int
-    ssl_cipher: str
-    auto_method: str
-
-
-@dataclass
-class Client:
-    config_profile: str = field(metadata={"json": "config-profile"})
-    notify_time: int
-    time_reconnect: int = field(metadata={"json": "time-reconnect"})
-    force_reconnect_interval: int
-    ip_update_interval: int
-    auto_restart: str
-    remote_conf: str
-    crypto_method: str
-    server: List[Server]
-    enrollment: List[Enrollment]
-
-
-@dataclass
-class AgentCofigurationData:
-    client: Client
-
-
-@dataclass
-class AgentConfigurationResponse:
-    data: AgentCofigurationData
-    error: int
-
 
 class AgentsManager:
     def __init__(self, client: AsyncClientInterface):

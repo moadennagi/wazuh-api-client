@@ -74,3 +74,9 @@ class DaemonsList(Enum):
 class StatsComponent(Enum):
     LOGCOLLECTOR = "logcollector"
     AGENT = "agent"
+
+
+class SysCheckScanType(Enum):
+    FILE = "file"
+    REGISTRY_KEY = "registry_key"
+    REGISTRY_VALUE = "registry_value"
