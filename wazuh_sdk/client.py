@@ -209,14 +209,28 @@ class AsyncRequestMaker(AsyncRequestBuilderInterface):
     def __init__(self, client: AsyncClientInterface):
         self.client = client
 
+
+    def _construct_params(self, params: dict[str, Any]) -> dict[str, Any]:
+        """
+        Construct a dictionary of params with only not None values.
+        """
+        res: dict[str, Any] = {}
+        for key, value in params.items():
+            if value:
+                res[key] = value
+        return res
+
     async def get(
         self,
         endpoint_name: str,
-        query_params: Optional[dict] = None,
+        query_params: Optional[dict[str, Any]] = None,
         path_params: Optional[dict[str, str | int]] = None,
     ) -> Any:
+        params = None
+        if query_params:
+            params = self._construct_params(query_params)
         endpoint = self.client.build_endpoint(endpoint_name, path_params)
-        res = await self.client.request("GET", endpoint, params=query_params)
+        res = await self.client.request("GET", endpoint, params=params)
         return res
 
     async def delete(
@@ -225,8 +239,11 @@ class AsyncRequestMaker(AsyncRequestBuilderInterface):
         query_params: Any,
         path_params: Optional[dict[str, str | int]] = None,
     ) -> Any:
+        params = None
+        if query_params:
+            params = self._construct_params(query_params)
         endpoint = self.client.build_endpoint(endpoint_name, path_params)
-        res = await self.client.request("DELETE", endpoint, params=query_params)
+        res = await self.client.request("DELETE", endpoint, params=params)
         return res
 
     async def post(
@@ -236,9 +253,12 @@ class AsyncRequestMaker(AsyncRequestBuilderInterface):
         body: dict[str, Any],
         path_params: Optional[dict[str, str | int]] = None,
     ) -> Any:
+        params = None
+        if query_params:
+            params = self._construct_params(query_params)
         endpoint = self.client.build_endpoint(endpoint_name, path_params)
         res = await self.client.request(
-            "POST", endpoint, params=query_params, json=body
+            "POST", endpoint, params=params, json=body
         )
         return res
 
@@ -249,8 +269,11 @@ class AsyncRequestMaker(AsyncRequestBuilderInterface):
         path_params: dict[str, str | int],
         body: Optional[dict[str, Any]] = None,
     ) -> Any:
+        params = None
+        if query_params:
+            params = self._construct_params(query_params)
         endpoint = self.client.build_endpoint(endpoint_name, path_params)
-        res = await self.client.request("PUT", endpoint, params=query_params, json=body)
+        res = await self.client.request("PUT", endpoint, params=params, json=body)
         return res
 
 

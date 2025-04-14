@@ -64,3 +64,8 @@ class AgentConfiguration(Enum):
     WDB = "wdb"
     WMODULES = "wmodules"
     RULE_TEST = "rule_test"
+
+
+class DaemonsList(Enum):
+    WAZUH_ANALYSISD = "wazuh-analysisd"
+    WAZUH_REMOTED = "wazuh-remoted"

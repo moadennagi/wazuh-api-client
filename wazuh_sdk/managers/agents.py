@@ -353,7 +353,9 @@ class AgentsManager:
 
         if list_agents_distinct_params:
             params = list_agents_distinct_params.to_query_dict()
-        res = await self.async_request_builder.get(V4ApiPaths.LIST_AGENTS_DISTINCT.value, params)
+        res = await self.async_request_builder.get(
+            V4ApiPaths.LIST_AGENTS_DISTINCT.value, params
+        )
         response = AgentResponse(**res)
         return response
 
@@ -391,7 +393,9 @@ class AgentsManager:
         if list_outdated_agents_params:
             params = list_outdated_agents_params.to_query_dict()
 
-        res = await self.async_request_builder.get(V4ApiPaths.LIST_OUTDATED_AGENTS.value, params)
+        res = await self.async_request_builder.get(
+            V4ApiPaths.LIST_OUTDATED_AGENTS.value, params
+        )
         response = AgentResponse(**res)
         return response
 
@@ -431,7 +435,9 @@ class AgentsManager:
 
         if list_agents_without_group_params:
             params = list_agents_without_group_params.to_query_dict()
-        res = await self.async_request_builder.get(V4ApiPaths.LIST_AGENTS_WITHOUT_GROUP.value, params)
+        res = await self.async_request_builder.get(
+            V4ApiPaths.LIST_AGENTS_WITHOUT_GROUP.value, params
+        )
         response = AgentResponse(**res)
         return response
 
@@ -514,7 +520,9 @@ class AgentsManager:
             configuration=str(configuration),
         )
         res = await self.async_request_builder.get(
-            V4ApiPaths.GET_ACTIVE_CONFIGURATION.value, query_params=params, path_params=path_parameters
+            V4ApiPaths.GET_ACTIVE_CONFIGURATION.value,
+            query_params=params,
+            path_params=path_parameters,
         )
         response = AgentConfigurationResponse(**res)
         return response
@@ -565,20 +573,79 @@ class AgentsManager:
         """
         Assign an agent to a specified group
         """
-        path_parameters: dict[str, str | int] = dict(agent_id=agent_id, group_id=group_id)
-        params: dict[str, bool] = dict(pretty=pretty, wait_for_complete=wait_for_complete, force_single_group=force_single_group)
-        res = await self.async_request_builder.put(V4ApiPaths.ASSIGN_AGENT_TO_GROUP.value, query_params=params, path_params=path_parameters)
+        path_parameters: dict[str, str | int] = dict(
+            agent_id=agent_id, group_id=group_id
+        )
+        params: dict[str, bool] = dict(
+            pretty=pretty,
+            wait_for_complete=wait_for_complete,
+            force_single_group=force_single_group,
+        )
+        res = await self.async_request_builder.put(
+            V4ApiPaths.ASSIGN_AGENT_TO_GROUP.value,
+            query_params=params,
+            path_params=path_parameters,
+        )
         response = AgentResponse(**res)
         return response
 
-    def get_key(self):
-        pass
+    async def get_key(
+        self, agent_id: str, pretty: bool = False, wait_for_complete: bool = False
+    ) -> AgentResponse:
+        """
+        Return the key of an agent.
+        """
+        path_parameters: dict[str, str | int] = dict(agent_id=agent_id)
+        params: dict[str, bool] = dict(
+            pretty=pretty, wait_for_complete=wait_for_complete
+        )
+        res = await self.async_request_builder.get(
+            V4ApiPaths.GET_KEY.value, query_params=params, path_params=path_parameters
+        )
+        response = AgentResponse(**res)
+        return response
 
-    def restart_agent(self):
-        pass
+    async def restart_agent(
+        self, agent_id: str, pretty: bool = False, wait_for_complete: bool = False
+    ) -> AgentResponse:
+        """
+        Restart the specified agent.
+        """
+        path_parameters: dict[str, str | int] = dict(agent_id=agent_id)
+        params: dict[str, bool] = dict(
+            pretty=pretty, wait_for_complete=wait_for_complete
+        )
+        res = await self.async_request_builder.put(
+            V4ApiPaths.RESTART_AGENT.value,
+            query_params=params,
+            path_params=path_parameters,
+        )
+        response = AgentResponse(**res)
+        return response
 
-    def get_wazuh_daemon_stats(self):
-        pass
+    async def get_wazuh_daemon_stats(
+        self,
+        agent_id: str,
+        daemons_list: Optional[List[str]] = None,
+        pretty: bool = False,
+        wait_for_complete: bool = False,
+    ) -> AgentResponse:
+        """
+        Get Wazuh daemon stats from an agent.
+        """
+        path_parameters: dict[str, str | int] = dict(agent_id=agent_id)
+        params: dict[str, bool | list[str] | None] = dict(
+            pretty=pretty,
+            wait_for_complete=wait_for_complete,
+            daemons_list=daemons_list,
+        )
+        res = await self.async_request_builder.get(
+            V4ApiPaths.GET_DAEMON_STATS.value,
+            query_params=params,
+            path_params=path_parameters,
+        )
+        response = AgentResponse(**res)
+        return response
 
     def upgrade_agents(self):
         pass
