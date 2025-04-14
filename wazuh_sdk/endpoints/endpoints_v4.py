@@ -6,7 +6,8 @@ API_PATHS = {
     "delete_agents": "/agents",
     "add_agent": "/agents",
     "get_active_configuration": "/agents/{agent_id}/config/{component}/{configuration}",
-    "delete_agent_from_group": "/agents/{agent_id}/group",
+    "delete_agent_from_groups": "/agents/{agent_id}/group",
+    "delete_agent_from_one_group": "/agents/{agent_id}/group/{group_id}",
     
     "agent_info": "/agents/{agent_id}",
     "agent_restart": "/agents/{agent_id}/restart",

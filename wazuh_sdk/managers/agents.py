@@ -518,22 +518,32 @@ class AgentsManager:
         response = AgentConfigurationResponse(**res)
         return response
 
-    async def remove_agent_from_groups(
+    async def remove_agent_from_one_or_more_groups(
         self,
         agent_id: str,
         pretty: bool = False,
         wait_for_complete: bool = False,
         groups_list: Optional[List[str]] = None,
+        group_id: Optional[str] = None
     ) -> ListAgentResponse:
         """
-        Remove the agent from all groups or a list of them. 
-        The agent will automatically revert to the default group if it is removed from all its assigned groups
+        Remove the agent from all groups or a list of them, one group given its name or id. 
+        The agent will automatically revert to the default group if it is removed from all its assigned groups.
         """
-        params = dict(pretty=pretty, wait_for_complete=wait_for_complete)
-        if groups_list:
-            params["groups_list"] = groups_list
+        if groups_list and group_id:
+            raise ValueError("Cannot provide a group_list and a group_id, can only provide one.")
+        
         path_params: dict[str, str | int] = dict(agent_id=str(agent_id))
-        res = await self.async_request_builder.delete("delete_agent_from_group", query_params=params, path_params=path_params)
+        params: dict[str, bool | list[str] | str] = dict(pretty=pretty, wait_for_complete=wait_for_complete)
+        
+        resource = "delete_agent_from_groups"
+        if group_id:
+            path_params["group_id"] = group_id
+            resource = "delete_agent_from_one_group"
+        elif groups_list:
+            params["groups_list"] = groups_list
+
+        res = await self.async_request_builder.delete(resource, query_params=params, path_params=path_params)
         response = ListAgentResponse(**res)
         return response
 

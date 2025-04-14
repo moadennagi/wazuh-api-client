@@ -172,6 +172,9 @@ class AsyncWazuhClient(AsyncClientInterface):
             )
         res = self.base_url
         if params:
+            for k, v in params.items():
+                if not v:
+                   del params[k]     
             res += route_template.format(**params)
         else:
             res += route_template
