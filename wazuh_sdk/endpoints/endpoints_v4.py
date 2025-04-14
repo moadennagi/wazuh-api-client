@@ -20,6 +20,11 @@ class V4ApiPaths(Enum):
     RESTART_AGENTS_IN_GROUP = "restart_agents_in_group"
     ADD_AGENT_FULL = "add_agent_full"
     ADD_AGENT_QUICK = "add_agent_quick"
+    RESTART_AGENTS_IN_NODE = "restart_agents_in_node"
+    FORCE_RECONNECT_AGENTS = "force_reconnect_agents"
+    RESTART_AGENTS = "restart_agents"
+    SUMMARIZE_AGENTS_OS = "summarize_agents_os"
+    SUMMARIZE_AGENTS_STATUS = "summarize_agents_status"
    
     GENERATE_TOKEN = "/security/user/authenticate"
 
@@ -43,7 +48,11 @@ API_PATHS = {
     V4ApiPaths.RESTART_AGENTS_IN_GROUP.value: "/agents/group/{group_id}/restart",
     V4ApiPaths.ADD_AGENT_FULL.value: "/agents/insert",
     V4ApiPaths.ADD_AGENT_QUICK.value: "/agents/insert/quick",
-
+    V4ApiPaths.RESTART_AGENTS_IN_NODE.value: "/agents/node/{node_id}/restart",
+    V4ApiPaths.FORCE_RECONNECT_AGENTS.value: "/agents/reconnect",
+    V4ApiPaths.RESTART_AGENTS.value: "/agents/restart",
+    V4ApiPaths.SUMMARIZE_AGENTS_OS.value: "/agents/summary/os",
+    V4ApiPaths.SUMMARIZE_AGENTS_STATUS.value: "/agents/summary/status",
     
     # Additional endpoints for v4 can be added here.
     "generate_token": "/security/user/authenticate"

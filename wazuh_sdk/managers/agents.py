@@ -1,4 +1,4 @@
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Literal
 from dataclasses import dataclass, field
 from ..enums import (
     AgentStatus,
@@ -806,24 +806,125 @@ class AgentsManager:
         response = AddAgentResponse(**res)
         return response
 
-    def restart_agents_in_node(self):
-        pass
+    async def restart_agents_in_node(
+        self, node_id: str, pretty: bool = False, wait_for_complete: bool = False
+    ) -> AgentResponse:
+        """
+        Restart all agents which belong to a specific given node.
+        """
+        path_parameters: dict[str, str | int] = dict(node_id=node_id)
+        params: dict[str, bool] = dict(
+            pretty=pretty, wait_for_complete=wait_for_complete
+        )
+        res = await self.async_request_builder.put(
+            V4ApiPaths.RESTART_AGENTS_IN_NODE.value,
+            query_params=params,
+            path_params=path_parameters,
+        )
+        response = AgentResponse(**res)
+        return response
 
-    def force_reconnect_agents(self):
-        pass
+    async def _restart_or_reconnect_agents(
+        self,
+        restart_or_reconnect: Literal["restart", "reconnect"],
+        agents_list: List[str],
+        pretty: bool = False,
+        wait_for_complete: bool = False,
+    ):
+        params: dict[str, bool | List[str]] = dict(
+            pretty=pretty, wait_for_complete=wait_for_complete, agents_list=agents_list
+        )
+        if restart_or_reconnect == "restart":
+            endpoint = V4ApiPaths.RESTART_AGENTS.value
+        elif restart_or_reconnect == "reconnect":
+            endpoint = V4ApiPaths.FORCE_RECONNECT_AGENTS.value
+        else:
+            raise ValueError(
+                "`restart_or_reconnect` must be one of: restart or reconnect"
+            )
+        res = await self.async_request_builder.put(endpoint, query_params=params)
+        return res
 
-    def restart_agents(self):
-        pass
+    async def force_reconnect_agents(
+        self,
+        agents_list: List[str],
+        pretty: bool = False,
+        wait_for_complete: bool = False,
+    ) -> AgentResponse:
+        """
+        Force reconnect all agents or a list of them.
+        """
+        res = await self._restart_or_reconnect_agents(
+            restart_or_reconnect="reconnect",
+            pretty=pretty,
+            agents_list=agents_list,
+            wait_for_complete=wait_for_complete,
+        )
+        response = AgentResponse(**res)
+        return response
 
-    def summarize_agents_os(self):
-        pass
+    async def restart_agents(
+        self,
+        agents_list: List[str],
+        pretty: bool = False,
+        wait_for_complete: bool = False,
+    ) -> AgentResponse:
+        """
+        Restart all agents or a list of them.
+        """
+        res = await self._restart_or_reconnect_agents(
+            restart_or_reconnect="restart",
+            pretty=pretty,
+            agents_list=agents_list,
+            wait_for_complete=wait_for_complete,
+        )
+        response = AgentResponse(**res)
+        return response
+    
+    async def _summarize_agents_item(self, item: Literal["os", "status"], pretty: bool = False, wait_for_complete: bool = False
+    ) -> dict[str, Any]:
+        """
+        Return a summary of the `item` of available agents, item is one of: os or status.
+        """
+        params: dict[str, bool] = dict(
+            pretty=pretty, wait_for_complete=wait_for_complete
+        )
+        if item == "os":
+            endpoint = V4ApiPaths.SUMMARIZE_AGENTS_OS.value
+        elif item == "status":
+            endpoint = V4ApiPaths.SUMMARIZE_AGENTS_STATUS.value
+        else:
+            raise ValueError(
+                "`item` must be one of: os or status."
+            )
+        res = await self.async_request_builder.get(
+            endpoint, query_params=params
+        )
+        return res
 
-    def summarize_agents_status(self):
-        pass
+    async def summarize_agents_os(
+        self, pretty: bool = False, wait_for_complete: bool = False
+    ) -> AgentResponse:
+        """
+        Return a summary of the OS of available agents
+        """
+        res = await self._summarize_agents_item(item="os", pretty=pretty, wait_for_complete=wait_for_complete)
+        response = AgentResponse(**res)
+        return response
 
-    def get_upgrade_results(self):
+    async def summarize_agents_status( self, pretty: bool = False, wait_for_complete: bool = False
+    ) -> AgentResponse:
+        """
+        Return a summary of the connection and groups configuration synchronization statuses of available agents
+        """
+        res = await self._summarize_agents_item(item="status", pretty=pretty, wait_for_complete=wait_for_complete)
+        response = AgentResponse(**res)
+        return response
+
+    async def get_upgrade_results(self):
         """
         Return the agents upgrade results
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.get_agent_upgrade
         """
-        pass
+        raise NotImplementedError()
+
