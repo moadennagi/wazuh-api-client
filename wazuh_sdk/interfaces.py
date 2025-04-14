@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Coroutine, Any, Optional
 
-class ClientInterface(ABC):
 
+class ClientInterface(ABC):
     @abstractmethod
     def build_endpoint(self, key: str) -> str:
         """
@@ -19,9 +19,10 @@ class ClientInterface(ABC):
 
 
 class AsyncClientInterface(ABC):
-
     @abstractmethod
-    def build_endpoint(self, key: str, params: Optional[dict[str, str | int]] = None) -> str:
+    def build_endpoint(
+        self, key: str, params: Optional[dict[str, str | int]] = None
+    ) -> str:
         """
         Construct the full API endpoint URL using the mapping and provided parameters.
         """
@@ -34,21 +35,42 @@ class AsyncClientInterface(ABC):
         """
         pass
 
+
 class AsyncRequestBuilderInterface(ABC):
     def __init__(self, client: AsyncClientInterface):
         pass
 
     @abstractmethod
-    async def get(self, endpoint_name: str, query_params: Any, path_params: dict[str, str | int]) -> Any:
-       pass
-    
-    @abstractmethod
-    async def delete(self, endpoint_name: str, query_params: Any, path_params: dict[str, str | int]) -> Any:
-       pass
+    async def get(
+        self, endpoint_name: str, query_params: Any, path_params: dict[str, str | int]
+    ) -> Any:
+        pass
 
     @abstractmethod
-    async def post(self, endpoint_name: str, query_params: Any, body: dict[str, Any], path_params: dict[str, str | int]) -> Any:
-       pass
+    async def delete(
+        self, endpoint_name: str, query_params: Any, path_params: dict[str, str | int]
+    ) -> Any:
+        pass
+
+    @abstractmethod
+    async def post(
+        self,
+        endpoint_name: str,
+        query_params: Any,
+        body: dict[str, Any],
+        path_params: dict[str, str | int],
+    ) -> Any:
+        pass
+
+    @abstractmethod
+    async def put(
+        self,
+        endpoint_name: str,
+        query_params: Any,
+        path_params: dict[str, str | int],
+        body: Optional[dict[str, Any]] = None,
+    ) -> Any:
+        pass
 
 
 class RequestBuilderInterface(ABC):
@@ -61,4 +83,4 @@ class RequestBuilderInterface(ABC):
 
     @abstractmethod
     def delete(self, endpoint_name: str, query_params: Any) -> Coroutine | None:
-       pass
+        pass

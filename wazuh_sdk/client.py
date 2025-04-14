@@ -160,7 +160,9 @@ class AsyncWazuhClient(AsyncClientInterface):
         except Exception as e:
             raise WazuhConnectionError("Failed to detect Wazuh version.") from e
 
-    def build_endpoint(self, key: str, params: Optional[dict[str, str | int]] = None) -> str:
+    def build_endpoint(
+        self, key: str, params: Optional[dict[str, str | int]] = None
+    ) -> str:
         """
         Construct the full API endpoint URL using the mapping and provided parameters.
         """
@@ -174,7 +176,7 @@ class AsyncWazuhClient(AsyncClientInterface):
         if params:
             for k, v in params.items():
                 if not v:
-                   del params[k]     
+                    del params[k]
             res += route_template.format(**params)
         else:
             res += route_template
@@ -235,7 +237,20 @@ class AsyncRequestMaker(AsyncRequestBuilderInterface):
         path_params: Optional[dict[str, str | int]] = None,
     ) -> Any:
         endpoint = self.client.build_endpoint(endpoint_name, path_params)
-        res = await self.client.request("POST", endpoint, params=query_params, json=body)
+        res = await self.client.request(
+            "POST", endpoint, params=query_params, json=body
+        )
+        return res
+
+    async def put(
+        self,
+        endpoint_name: str,
+        query_params: Any,
+        path_params: dict[str, str | int],
+        body: Optional[dict[str, Any]] = None,
+    ) -> Any:
+        endpoint = self.client.build_endpoint(endpoint_name, path_params)
+        res = await self.client.request("PUT", endpoint, params=query_params, json=body)
         return res
 
 

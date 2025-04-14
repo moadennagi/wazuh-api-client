@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from ..enums import AgentStatus, GroupConfigStatus, AgentComponent, AgentConfiguration
 from ..interfaces import AsyncClientInterface
 from ..client import AsyncRequestMaker
+from ..endpoints.endpoints_v4 import V4ApiPaths
 
 
 @dataclass(kw_only=True)
@@ -205,7 +206,7 @@ class ResponseData:
 
 
 @dataclass
-class ListAgentResponse:
+class AgentResponse:
     message: str
     error: int
     data: ResponseData
@@ -275,7 +276,7 @@ class AgentsManager:
 
     async def list(
         self, list_agent_params: Optional[ListAgentsQueryParams] = None, **kwargs
-    ) -> ListAgentResponse:
+    ) -> AgentResponse:
         """
         Retrieve a list of agents.
 
@@ -291,7 +292,7 @@ class AgentsManager:
 
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.get_agents
         """
-        endpoint = "list_agents"
+        endpoint = V4ApiPaths.LIST_AGENTS.value
         if not list_agent_params:
             list_agent_params = ListAgentsQueryParams()
 
@@ -304,7 +305,7 @@ class AgentsManager:
                 setattr(list_agent_params, param, value)
         params = list_agent_params.to_query_dict()
         res = await self.async_request_builder.get(endpoint, params)
-        response = ListAgentResponse(**res)
+        response = AgentResponse(**res)
         return response
 
     async def list_distinct(
@@ -312,7 +313,7 @@ class AgentsManager:
         fields: Optional[List[str]] = None,
         list_agents_distinct_params: Optional[ListAgentsDistinctQueryParams] = None,
         **kwargs,
-    ) -> ListAgentResponse:
+    ) -> AgentResponse:
         """
         List all the different combinations that agents have for the selected fields.
 
@@ -352,15 +353,15 @@ class AgentsManager:
 
         if list_agents_distinct_params:
             params = list_agents_distinct_params.to_query_dict()
-        res = await self.async_request_builder.get("list_agents_distinct", params)
-        response = ListAgentResponse(**res)
+        res = await self.async_request_builder.get(V4ApiPaths.LIST_AGENTS_DISTINCT.value, params)
+        response = AgentResponse(**res)
         return response
 
     async def list_outdated(
         self,
         list_outdated_agents_params: Optional[ListOutdatedAgentsQueryParams] = None,
         **kwargs,
-    ) -> ListAgentResponse:
+    ) -> AgentResponse:
         """
         Return the list of outdated agents.
 
@@ -390,8 +391,8 @@ class AgentsManager:
         if list_outdated_agents_params:
             params = list_outdated_agents_params.to_query_dict()
 
-        res = await self.async_request_builder.get("list_outdated_agents", params)
-        response = ListAgentResponse(**res)
+        res = await self.async_request_builder.get(V4ApiPaths.LIST_OUTDATED_AGENTS.value, params)
+        response = AgentResponse(**res)
         return response
 
     async def list_without_group(
@@ -430,8 +431,8 @@ class AgentsManager:
 
         if list_agents_without_group_params:
             params = list_agents_without_group_params.to_query_dict()
-        res = await self.async_request_builder.get("list_agents_without_group", params)
-        response = ListAgentResponse(**res)
+        res = await self.async_request_builder.get(V4ApiPaths.LIST_AGENTS_WITHOUT_GROUP.value, params)
+        response = AgentResponse(**res)
         return response
 
     async def delete(
@@ -462,9 +463,9 @@ class AgentsManager:
                 setattr(delete_agents_params, param, value)
 
         res = await self.async_request_builder.delete(
-            "delete_agents", delete_agents_params
+            V4ApiPaths.DELETE_AGENTS.value, delete_agents_params
         )
-        response = ListAgentResponse(**res)
+        response = AgentResponse(**res)
         return response
 
     async def add(
@@ -482,7 +483,7 @@ class AgentsManager:
             pretty=pretty, wait_for_complete=wait_for_complete
         )
         res = await self.async_request_builder.post(
-            "add_agent",
+            V4ApiPaths.ADD_AGENT.value,
             query_params=add_agent_query_params,
             body=add_agent_request_body.to_query_dict(),
         )
@@ -501,7 +502,7 @@ class AgentsManager:
         Return the active configuration the agent is currently using.
         This can be different from the configuration present in the configuration file,
         if it has been modified and the agent has not been restarted yet.
-        
+
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.add_agent
         """
         params: dict[str, bool] = dict(
@@ -513,7 +514,7 @@ class AgentsManager:
             configuration=str(configuration),
         )
         res = await self.async_request_builder.get(
-            "get_active_configuration", query_params=params, path_params=path_parameters
+            V4ApiPaths.GET_ACTIVE_CONFIGURATION.value, query_params=params, path_params=path_parameters
         )
         response = AgentConfigurationResponse(**res)
         return response
@@ -524,31 +525,51 @@ class AgentsManager:
         pretty: bool = False,
         wait_for_complete: bool = False,
         groups_list: Optional[List[str]] = None,
-        group_id: Optional[str] = None
-    ) -> ListAgentResponse:
+        group_id: Optional[str] = None,
+    ) -> AgentResponse:
         """
-        Remove the agent from all groups or a list of them, one group given its name or id. 
+        Remove the agent from all groups or a list of them, one group given its name or id.
         The agent will automatically revert to the default group if it is removed from all its assigned groups.
         """
         if groups_list and group_id:
-            raise ValueError("Cannot provide a group_list and a group_id, can only provide one.")
-        
+            raise ValueError(
+                "Cannot provide a group_list and a group_id, can only provide one."
+            )
+
         path_params: dict[str, str | int] = dict(agent_id=str(agent_id))
-        params: dict[str, bool | list[str] | str] = dict(pretty=pretty, wait_for_complete=wait_for_complete)
-        
-        resource = "delete_agent_from_groups"
+        params: dict[str, bool | list[str] | str] = dict(
+            pretty=pretty, wait_for_complete=wait_for_complete
+        )
+
+        resource = V4ApiPaths.DELETE_AGENT_FROM_GROUPS
         if group_id:
             path_params["group_id"] = group_id
-            resource = "delete_agent_from_one_group"
+            resource = V4ApiPaths.DELETE_AGENT_FROM_ONE_GROUP
         elif groups_list:
             params["groups_list"] = groups_list
 
-        res = await self.async_request_builder.delete(resource, query_params=params, path_params=path_params)
-        response = ListAgentResponse(**res)
+        res = await self.async_request_builder.delete(
+            resource.value, query_params=params, path_params=path_params
+        )
+        response = AgentResponse(**res)
         return response
 
-    def assign_agent_to_group(self):
-        pass
+    async def assign_agent_to_group(
+        self,
+        agent_id: str,
+        group_id: str,
+        force_single_group: bool,
+        pretty: bool = False,
+        wait_for_complete: bool = False,
+    ) -> AgentResponse:
+        """
+        Assign an agent to a specified group
+        """
+        path_parameters: dict[str, str | int] = dict(agent_id=agent_id, group_id=group_id)
+        params: dict[str, bool] = dict(pretty=pretty, wait_for_complete=wait_for_complete, force_single_group=force_single_group)
+        res = await self.async_request_builder.put(V4ApiPaths.ASSIGN_AGENT_TO_GROUP.value, query_params=params, path_params=path_parameters)
+        response = AgentResponse(**res)
+        return response
 
     def get_key(self):
         pass
