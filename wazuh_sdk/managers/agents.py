@@ -390,15 +390,15 @@ class AgentsManager:
         if list_outdated_agents_params:
             params = list_outdated_agents_params.to_query_dict()
 
-        res = await self.async_request_builder.get(
-            "list_outdated_agents", params
-        )
+        res = await self.async_request_builder.get("list_outdated_agents", params)
         response = ListAgentResponse(**res)
         return response
 
     async def list_without_group(
         self,
-        list_agents_without_group_params: Optional[ListAgentsWithoutGroupQueryParams] = None,
+        list_agents_without_group_params: Optional[
+            ListAgentsWithoutGroupQueryParams
+        ] = None,
         **kwargs,
     ):
         """
@@ -427,12 +427,10 @@ class AgentsManager:
                         f"Invalid parameter: {param}, keywork argument must be one of : {list(ListAgentsWithoutGroupQueryParams.__dataclass_fields__.keys())}"
                     )
                 setattr(list_agents_without_group_params, param, value)
-    
+
         if list_agents_without_group_params:
             params = list_agents_without_group_params.to_query_dict()
-        res = await self.async_request_builder.get(
-            "list_agents_without_group", params
-        )
+        res = await self.async_request_builder.get("list_agents_without_group", params)
         response = ListAgentResponse(**res)
         return response
 
@@ -503,19 +501,41 @@ class AgentsManager:
         Return the active configuration the agent is currently using.
         This can be different from the configuration present in the configuration file,
         if it has been modified and the agent has not been restarted yet.
+        
         https://documentation.wazuh.com/current/user-manual/api/reference.html#operation/api.controllers.agent_controller.add_agent
         """
-        params: dict[str, bool] = dict(pretty=pretty, wait_for_complete=wait_for_complete)
-        path_parameters: dict[str, str | int] = dict(agent_id=str(agent_id), component=str(component), configuration=str(configuration))
-        res = await self.async_request_builder.get("get_active_configuration", query_params=params, path_params=path_parameters)
+        params: dict[str, bool] = dict(
+            pretty=pretty, wait_for_complete=wait_for_complete
+        )
+        path_parameters: dict[str, str | int] = dict(
+            agent_id=str(agent_id),
+            component=str(component),
+            configuration=str(configuration),
+        )
+        res = await self.async_request_builder.get(
+            "get_active_configuration", query_params=params, path_params=path_parameters
+        )
         response = AgentConfigurationResponse(**res)
         return response
 
-    def remove_agent_from_groups(self):
-        pass
-
-    def remove_agent_from_group(self):
-        pass
+    async def remove_agent_from_groups(
+        self,
+        agent_id: str,
+        pretty: bool = False,
+        wait_for_complete: bool = False,
+        groups_list: Optional[List[str]] = None,
+    ) -> ListAgentResponse:
+        """
+        Remove the agent from all groups or a list of them. 
+        The agent will automatically revert to the default group if it is removed from all its assigned groups
+        """
+        params = dict(pretty=pretty, wait_for_complete=wait_for_complete)
+        if groups_list:
+            params["groups_list"] = groups_list
+        path_params: dict[str, str | int] = dict(agent_id=str(agent_id))
+        res = await self.async_request_builder.delete("delete_agent_from_group", query_params=params, path_params=path_params)
+        response = ListAgentResponse(**res)
+        return response
 
     def assign_agent_to_group(self):
         pass

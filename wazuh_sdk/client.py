@@ -221,8 +221,7 @@ class AsyncRequestMaker(AsyncRequestBuilderInterface):
         path_params: Optional[dict[str, str | int]] = None,
     ) -> Any:
         endpoint = self.client.build_endpoint(endpoint_name, path_params)
-        params = query_params.to_query_dict()
-        res = await self.client.request("DELETE", endpoint, params=params)
+        res = await self.client.request("DELETE", endpoint, params=query_params)
         return res
 
     async def post(
@@ -233,8 +232,7 @@ class AsyncRequestMaker(AsyncRequestBuilderInterface):
         path_params: Optional[dict[str, str | int]] = None,
     ) -> Any:
         endpoint = self.client.build_endpoint(endpoint_name, path_params)
-        params = query_params.to_query_dict()
-        res = await self.client.request("POST", endpoint, params=params, json=body)
+        res = await self.client.request("POST", endpoint, params=query_params, json=body)
         return res
 
 
