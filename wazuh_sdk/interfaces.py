@@ -29,7 +29,7 @@ class AsyncClientInterface(ABC):
         pass
 
     @abstractmethod
-    async def request(self, method: str, endpoint: str, **kwargs):
+    async def request(self, method: str, endpoint: str, **kwargs) -> dict[str, Any]:
         """
         Helper method to make an HTTP request.
         """
@@ -42,33 +42,35 @@ class AsyncRequestBuilderInterface(ABC):
 
     @abstractmethod
     async def get(
-        self, endpoint_name: str, query_params: Any, path_params: dict[str, str | int]
+        self, endpoint: str, query_params: Any, path_params: dict[str, str | int], **kwargs
     ) -> Any:
         pass
 
     @abstractmethod
     async def delete(
-        self, endpoint_name: str, query_params: Any, path_params: dict[str, str | int]
+        self, endpoint: str, query_params: Any, path_params: dict[str, str | int], **kwargs
     ) -> Any:
         pass
 
     @abstractmethod
     async def post(
         self,
-        endpoint_name: str,
+        endpoint: str,
         query_params: Any,
         body: dict[str, Any],
         path_params: dict[str, str | int],
+        **kwargs
     ) -> Any:
         pass
 
     @abstractmethod
     async def put(
         self,
-        endpoint_name: str,
+        endpoint: str,
         query_params: Any,
         path_params: dict[str, str | int],
         body: Optional[dict[str, Any]] = None,
+        **kwargs
     ) -> Any:
         pass
 
@@ -78,11 +80,11 @@ class RequestBuilderInterface(ABC):
         pass
 
     @abstractmethod
-    def get(self, endpoint_name: str, query_params: Any) -> Any:
+    def get(self, endpoint_name: str, query_params: Any, **kwargs) -> Any:
         pass
 
     @abstractmethod
-    def delete(self, endpoint_name: str, query_params: Any) -> Coroutine | None:
+    def delete(self, endpoint_name: str, query_params: Any, **kwargs) -> Coroutine | None:
         pass
 
 
