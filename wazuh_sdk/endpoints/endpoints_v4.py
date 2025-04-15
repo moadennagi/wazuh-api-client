@@ -1,63 +1,48 @@
 from enum import Enum
 
 class V4ApiPaths(Enum):
-    LIST_AGENTS = "list_agents"
-    LIST_OUTDATED_AGENTS = "list_outdated_agents"
-    LIST_AGENTS_DISTINCT = "list_agents_distinct"
-    LIST_AGENTS_WITHOUT_GROUP = "list_agents_without_group"
-    DELETE_AGENTS = "delete_agents"
-    ADD_AGENT = "add_agent"
-    GET_ACTIVE_CONFIGURATION = "get_active_configuration"
-    DELETE_AGENT_FROM_GROUPS =  "delete_agent_from_groups"
-    DELETE_AGENT_FROM_ONE_GROUP = "delete_agent_from_one_group"
-    ASSIGN_AGENT_TO_GROUP = "assign_agent_to_group"
-    GET_KEY = "get_key"
-    RESTART_AGENT = "restart_agent"
-    GET_DAEMON_STATS = "get_daemon_stats"
-    GET_AGENT_COMPONENT_STATS = "get_agent_component_stats"
-    REMOVE_AGENTS_FROM_GROUP = "remove_agent_from_group"
-    ASSIGN_AGENTS_TO_GROUP = "assign_agents_to_group"
-    RESTART_AGENTS_IN_GROUP = "restart_agents_in_group"
-    ADD_AGENT_FULL = "add_agent_full"
-    ADD_AGENT_QUICK = "add_agent_quick"
-    RESTART_AGENTS_IN_NODE = "restart_agents_in_node"
-    FORCE_RECONNECT_AGENTS = "force_reconnect_agents"
-    RESTART_AGENTS = "restart_agents"
-    SUMMARIZE_AGENTS_OS = "summarize_agents_os"
-    SUMMARIZE_AGENTS_STATUS = "summarize_agents_status"
-    RUN_SCAN = "run_scan"
-    GET_SCAN_RESULTS = "get_sca_results"
-   
-    GENERATE_TOKEN = "/security/user/authenticate"
+    # Agents endpoints
+    LIST_AGENTS = "/agents"
+    LIST_OUTDATED_AGENTS = "/agents/outdated"
+    LIST_AGENTS_DISTINCT = "/agents/stats/distinct"
+    LIST_AGENTS_WITHOUT_GROUP = "/agents/no_group"
+    DELETE_AGENTS = "/agents"  # Consider using HTTP DELETE on /agents
+    ADD_AGENT = "/agents"      # Consider using HTTP POST on /agents
+    GET_ACTIVE_CONFIGURATION = "/agents/{agent_id}/config/{component}/{configuration}"
+    DELETE_AGENT_FROM_GROUPS = "/agents/{agent_id}/group"
+    DELETE_AGENT_FROM_ONE_GROUP = "/agents/{agent_id}/group/{group_id}"
+    ASSIGN_AGENT_TO_GROUP = "/agents/group"
+    GET_KEY = "/agents/{agent_id}/key"
+    RESTART_AGENT = "/agents/{agent_id}/restart"
+    GET_DAEMON_STATS = "/agents/{agent_id}/daemons/stats"
+    GET_AGENT_COMPONENT_STATS = "/agents/{agent_id}/stats/{component}"
+    REMOVE_AGENTS_FROM_GROUP = "/agents/group"
+    RESTART_AGENTS_IN_GROUP = "/agents/group/{group_id}/restart"
+    ADD_AGENT_FULL = "/agents/insert"
+    ADD_AGENT_QUICK = "/agents/insert/quick"
+    RESTART_AGENTS_IN_NODE = "/agents/node/{node_id}/restart"
+    FORCE_RECONNECT_AGENTS = "/agents/reconnect"
+    RESTART_AGENTS = "/agents/restart"
+    SUMMARIZE_AGENTS_OS = "/agents/summary/os"
+    SUMMARIZE_AGENTS_STATUS = "/agents/summary/status"
 
-API_PATHS = {
-    V4ApiPaths.LIST_AGENTS.value: "/agents",
-    V4ApiPaths.LIST_OUTDATED_AGENTS.value: "/agents/outdated",
-    V4ApiPaths.LIST_AGENTS_DISTINCT.value: "/agents/stats/distinct",
-    V4ApiPaths.LIST_AGENTS_WITHOUT_GROUP.value: "/agents/no_group",
-    V4ApiPaths.DELETE_AGENTS.value: "/agents",
-    V4ApiPaths.ADD_AGENT.value: "/agents",
-    V4ApiPaths.GET_ACTIVE_CONFIGURATION.value: "/agents/{agent_id}/config/{component}/{configuration}",
-    V4ApiPaths.DELETE_AGENT_FROM_GROUPS.value: "/agents/{agent_id}/group",
-    V4ApiPaths.DELETE_AGENT_FROM_ONE_GROUP.value: "/agents/{agent_id}/group/{group_id}",
-    V4ApiPaths.ASSIGN_AGENT_TO_GROUP.value: "/agents/{group_id}/group/{group_id}",
-    V4ApiPaths.GET_KEY.value: "/agents/{agent_id}/key",
-    V4ApiPaths.RESTART_AGENT.value: "/agents/{agent_id}/restart",
-    V4ApiPaths.GET_DAEMON_STATS.value: "/agents/{agent_id}/daemons/stats",
-    V4ApiPaths.GET_AGENT_COMPONENT_STATS.value: "/agents/{agent_id}/stats/{component}",
-    V4ApiPaths.REMOVE_AGENTS_FROM_GROUP.value: "/agents/group",
-    V4ApiPaths.ASSIGN_AGENT_TO_GROUP.value: "/agents/group",
-    V4ApiPaths.RESTART_AGENTS_IN_GROUP.value: "/agents/group/{group_id}/restart",
-    V4ApiPaths.ADD_AGENT_FULL.value: "/agents/insert",
-    V4ApiPaths.ADD_AGENT_QUICK.value: "/agents/insert/quick",
-    V4ApiPaths.RESTART_AGENTS_IN_NODE.value: "/agents/node/{node_id}/restart",
-    V4ApiPaths.FORCE_RECONNECT_AGENTS.value: "/agents/reconnect",
-    V4ApiPaths.RESTART_AGENTS.value: "/agents/restart",
-    V4ApiPaths.SUMMARIZE_AGENTS_OS.value: "/agents/summary/os",
-    V4ApiPaths.SUMMARIZE_AGENTS_STATUS.value: "/agents/summary/status",
-    V4ApiPaths.RUN_SCAN.value: "/syscheck",
-    V4ApiPaths.GET_SCAN_RESULTS.value: "/syscheck/{agent_id}",
-    
-    # Additional endpoints for v4 can be added here.
-    "generate_token": "/security/user/authenticate"
-}
+    # Syscheck endpoints
+    RUN_SCAN = "/syscheck"
+    GET_SCAN_RESULTS = "/syscheck/{agent_id}"
+    CLEAR_SCAN_RESULTS = "/syscheck/{agent_id}"
+    GET_LAST_SCAN_DATETIME = "/syscheck/{agent_id}/last_scan"
+
+    # Manager endpoints
+    GET_WAZUH_STATUS = "/manager/status"
+    GET_WAZUH_INFORMATION = "/manager/information"
+    GET_WAZUH_CONFIGURATION = "/manager/configuration"
+    UPDATE_WAZUH_CONFIGURATION = "/manager/configuration"
+    GET_WAZUH_DAEMON_STATS = "/manager/daemons/stats"
+    GET_WAZUH_STATS = "/manager/stats"
+    GET_WAZUH_STATS_HOUR = "/manager/stats/hour"
+    GET_WAZUH_STATS_WEEK = "/manager/stats/week"
+    GET_WAZUH_LOGS = "/manager/logs"
+    GET_WAZUH_LOGS_SUMMARY = "/manager/logs/summary"
+
+    # Authentication endpoint
+    GENERATE_TOKEN = "/security/user/authenticate"

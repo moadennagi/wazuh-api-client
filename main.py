@@ -31,5 +31,7 @@ if __name__ == "__main__":
             # res = await agents_manager.list()
             # print(res)
             print(await syscheck_manager.get_results(agent_id="001"))
+            print(await syscheck_manager.clear_results(agent_id="001"))
+            print(await syscheck_manager.get_last_scan_datetime(agent_id="001"))
 
     asyncio.run(main())

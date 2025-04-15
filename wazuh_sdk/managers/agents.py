@@ -7,7 +7,7 @@ from ..enums import (
     AgentConfiguration,
     StatsComponent,
 )
-from ..interfaces import AsyncClientInterface
+from ..interfaces import AsyncClientInterface, ResourceManagerInterface
 from ..client import AsyncRequestMaker
 from ..endpoints.endpoints_v4 import V4ApiPaths
 from ..query import ToDictDataClass, PaginationQueryParams, CommonQueryParams
@@ -144,7 +144,7 @@ class AgentInsertForce(ToDictDataClass):
     disconnected_time: DisconnectedTime = field(default_factory=DisconnectedTime)
     after_registration_time: str = "1h"
 
-class AgentsManager:
+class AgentsManager(ResourceManagerInterface):
     def __init__(self, client: AsyncClientInterface):
         """
         Initialize with a reference to the WazuhClient instance.

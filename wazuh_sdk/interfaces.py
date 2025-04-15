@@ -84,3 +84,11 @@ class RequestBuilderInterface(ABC):
     @abstractmethod
     def delete(self, endpoint_name: str, query_params: Any) -> Coroutine | None:
         pass
+
+
+class ResourceManagerInterface:
+    def __init__(self, client: AsyncClientInterface):
+        """
+        Initialize with a reference to the WazuhClient instance.
+        """
+        pass

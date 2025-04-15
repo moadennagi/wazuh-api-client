@@ -75,13 +75,44 @@ class SysCheckManager:
         res = await self.async_request_builder.get(
             V4ApiPaths.GET_SCAN_RESULTS.value,
             query_params=params.to_query_dict(),
-            path_params=path_params
+            path_params=path_params,
         )
         response = AgentResponse(**res)
         return response
 
-    async def clear_results(self):
-        pass
+    async def clear_results(
+        self, agent_id: str, pretty: bool = False, wait_for_complete: bool = False
+    ):
+        """
+        Clear file integrity monitoring scan results for a specified agent.
+        Only available for agents < 3.12.0, it doesn't apply for more recent ones
+        """
+        path_parameters: dict[str, str | int] = dict(agent_id=agent_id)
+        params: dict[str, bool] = dict(
+            pretty=pretty, wait_for_complete=wait_for_complete
+        )
+        res = await self.async_request_builder.delete(
+            V4ApiPaths.CLEAR_SCAN_RESULTS.value,
+            query_params=params,
+            path_params=path_parameters,
+        )
+        response = AgentResponse(**res)
+        return response
 
-    async def get_last_scan_datetime(self):
-        pass
+    async def get_last_scan_datetime(
+        self, agent_id: str, pretty: bool = False, wait_for_complete: bool = False
+    ) -> AgentResponse:
+        """
+        Return when the last syscheck scan started and ended. If the scan is still in progress the end date will be unknown.
+        """
+        path_parameters: dict[str, str | int] = dict(agent_id=agent_id)
+        params: dict[str, bool] = dict(
+            pretty=pretty, wait_for_complete=wait_for_complete
+        )
+        res = await self.async_request_builder.get(
+            V4ApiPaths.GET_LAST_SCAN_DATETIME.value,
+            query_params=params,
+            path_params=path_parameters,
+        )
+        response = AgentResponse(**res)
+        return response
