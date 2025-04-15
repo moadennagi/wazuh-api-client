@@ -231,7 +231,7 @@ class AsyncRequestMaker(AsyncRequestBuilderInterface):
         if query_params:
             params = self._construct_params(query_params)
         endpoint = self.client.build_endpoint(endpoint, path_params)
-        res = await self.client.request("GET", endpoint, query_params=params, **kwargs)
+        res = await self.client.request("GET", endpoint, params=params, **kwargs)
         return res
 
     async def delete(

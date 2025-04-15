@@ -39,3 +39,9 @@ git clone https://github.com/moadennagi/wazuh-api-client.git
 cd wazuh-api-client
 pip install -e .
 ```
+
+### From Pypi
+
+```bash
+pip install wazuh-api-client
+```

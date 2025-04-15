@@ -1,0 +1,52 @@
+
+### TODO
+
+- [] V3 support
+- [] Agents routes
+    - [x] delete agents
+    - [x] list agents
+    - [x] add agent
+    - [x] get active configuration
+    - [x] remove agent from groups
+    - [x] remove agent from one group
+    - [x] assign agent to group
+    - [x] get key
+    - [x] restart agent
+    - [x] get wazuh daemon stats from an agent
+    - [x] get agent's component stats
+    - [] upgrade agents
+    - [] upgrade agents custom
+    - [] get upgrade results
+    - [] check user's permission to uninstall agents
+    - [x] remove agents from group
+    - [x] add agent full
+    - [x] add agent quick
+    - [x] list agents without group
+    - [x] restart agents in node
+    - [x] list outdated agents
+    - [x] force reconnect agents
+    - [x] restart agents in group
+    - [x] summarize agents OS
+    - [x] summarize agents status
+- [] Ciscat
+- [] Cluster
+- [] Decoders
+- [] Events
+- [] Experimental
+- [] Groups
+- [] Lists
+- [] Logtest
+- [] Manager
+- [] Mitre
+- [] Overview
+- [] Rootcheck
+- [] Rules
+- [] Sca
+- [] Security
+- [x] Syscheck
+    - [x] run scan
+    - [x] get results
+    - [x] clear results
+    - [x] get last scan datetime
+- [] Syscollector
+- [] Tasks
