@@ -3,9 +3,9 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "wazuh-sdk"
+name = "wazuh-api-client"
 version = "0.1.0-beta"
-description = "A flexible Python SDK for interacting with the Wazuh API (currently supporting version 4)."
+description = "A flexible Python API client for interacting with the Wazuh API (currently supporting version 4)."
 readme = "README.md"
 requires-python = ">=3.6"
 license = { file = "LICENSE" }

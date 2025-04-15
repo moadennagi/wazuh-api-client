@@ -10,8 +10,8 @@ The Wazuh API client aims to simplify integrations with the Wazuh API by providi
 ## Usage
 
 ```python
-from wazuh_sdk import AsyncWazuhClient
-from wazuh_sdk.managers import AgentsManager, SysCheckManager
+from wazuh_api_client import AsyncWazuhClient
+from wazuh_api_client.managers import AgentsManager, SysCheckManager
 
 async with AsyncWazuhClient(
     base_url="https://172.0.0.1:55000",
@@ -35,7 +35,7 @@ async with AsyncWazuhClient(
 Clone the repository and install in editable mode:
 
 ```bash
-git clone https://github.com/moadennagi/wazuh-api-sdk.git
-cd wazuh-api-sdk
+git clone https://github.com/moadennagi/wazuh-api-client.git
+cd wazuh-api-client
 pip install -e .
 ```
