@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wazuh-sdk"
+version = "0.1.0"
+description = "A flexible Python SDK for interacting with the Wazuh API (currently supporting version 4)."
+readme = "README.md"
+requires-python = ">=3.6"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Moad Ennagi", email = "moad.ennagi@gmail.com" }
+]
+dependencies = [
+    "requests>=2.20.0",
+    "httpx==0.28.1"
+]
+urls = { 
+    "Homepage" = "https://github.com/moadennagi/wazuh-api-sdk" 
+}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent"
+]
