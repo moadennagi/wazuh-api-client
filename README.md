@@ -59,14 +59,14 @@ pip install -e .
     - [] upgrade agents custom
     - [] get upgrade results
     - [] check user's permission to uninstall agents
-    - [] remove agents from group
-    - [] add agent full
-    - [] add agent quick
+    - [x] remove agents from group
+    - [x] add agent full
+    - [x] add agent quick
     - [x] list agents without group
-    - [] restart agents in node
+    - [x] restart agents in node
     - [x] list outdated agents
-    - [] force reconnect agents
-    - [] restart agents
+    - [x] force reconnect agents
+    - [x] restart agents in group
     - [x] summarize agents OS
     - [x] summarize agents status
 - [] Ciscat
@@ -84,7 +84,10 @@ pip install -e .
 - [] Rules
 - [] Sca
 - [] Security
-- [] Syscheck
-    - []
+- [x] Syscheck
+    - [x] run scan
+    - [x] get results
+    - [x] clear results
+    - [x] get last scan datetime
 - [] Syscollector
 - [] Tasks
