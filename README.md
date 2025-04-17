@@ -21,12 +21,10 @@ async with AsyncWazuhClient(
 ) as async_client:
     agents_manager = AgentsManager(client=async_client)
     syscheck_manager = SysCheckManager(client=async_client)
-    # res = await agents_manager.list()
-    # print(res)
-    print(await syscheck_manager.get_results(agent_id="001"))
-    print(await syscheck_manager.clear_results(agent_id="001"))
-    print(await syscheck_manager.get_last_scan_datetime(agent_id="001"))
-
+    # listing all agents
+    agents = await agents_manager.list()
+    # getting syschekc resutls
+    agent_scan_result = await syscheck_manager.get_results(agent_id="001"))
 ```
 ## Installation
 
