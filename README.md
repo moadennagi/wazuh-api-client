@@ -1,11 +1,11 @@
 # Wazuh API client
 
 **A flexible Python client for interacting with the Wazuh API.**  
-Supports 4.x version with modular route handlers and extensive functionality for managing agents, configurations, and more.
+Supports 4 version with modular route handlers and extensive functionality for managing agents, configurations, and more.
 
 ## Overview
 
-The Wazuh API client aims to simplify integrations with the Wazuh API by providing well-documented methods and abstractions for each available endpoint. Whether you need to manage agents, retrieve system configurations, or interface with other Wazuh components, this SDK offers a consistent and easy-to-use interface for your Python applications.
+The Wazuh API client aims to simplify integrations with the Wazuh API by providing well-documented methods and abstractions for each available endpoint.
 
 ## Usage
 
