@@ -5,7 +5,7 @@ from ..enums import SysCheckScanType
 from ..interfaces import AsyncClientInterface
 from ..client import AsyncRequestMaker
 from ..endpoints.endpoints_v4 import V4ApiPaths
-from ..response import AgentResponse
+from ..response import APIResponse
 
 
 @dataclass
@@ -43,7 +43,7 @@ class SysCheckManager:
         agents_list: List[str],
         pretty: bool = False,
         wait_for_complete: bool = False,
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Run FIM scan in all agents
         """
@@ -53,12 +53,12 @@ class SysCheckManager:
         res = await self.async_request_builder.put(
             V4ApiPaths.RUN_SCAN.value, query_params=params
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def get_results(
         self, agent_id: str, params: Optional[ScanResultParams] = None, **kwargs
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Return FIM findings in the specified agent.
         """
@@ -77,7 +77,7 @@ class SysCheckManager:
             query_params=params.to_query_dict(),
             path_params=path_params,
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def clear_results(
@@ -96,12 +96,12 @@ class SysCheckManager:
             query_params=params,
             path_params=path_parameters,
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def get_last_scan_datetime(
         self, agent_id: str, pretty: bool = False, wait_for_complete: bool = False
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Return when the last syscheck scan started and ended. If the scan is still in progress the end date will be unknown.
         """
@@ -114,5 +114,5 @@ class SysCheckManager:
             query_params=params,
             path_params=path_parameters,
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response

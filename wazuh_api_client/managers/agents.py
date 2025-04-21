@@ -11,7 +11,7 @@ from ..interfaces import AsyncClientInterface, ResourceManagerInterface
 from ..client import AsyncRequestMaker
 from ..endpoints.endpoints_v4 import V4ApiPaths
 from ..query import ToDictDataClass, PaginationQueryParams, CommonQueryParams
-from ..response import AgentResponse, AddAgentResponse, AgentConfigurationResponse
+from ..response import APIResponse, AddAgentResponse, AgentConfigurationResponse, ResponseData
 
 
 @dataclass(kw_only=True)
@@ -144,6 +144,50 @@ class AgentInsertForce(ToDictDataClass):
     disconnected_time: DisconnectedTime = field(default_factory=DisconnectedTime)
     after_registration_time: str = "1h"
 
+
+@dataclass
+class OS:
+    arch: str
+    minor: str
+    codename: str
+    version: str
+    platform: str
+    uname: str
+    name: str
+    major: str
+
+
+
+@dataclass
+class Agent:
+    os: OS
+    group_config_status: GroupConfigStatus
+    lastKeepAlive: str
+    dateAdd: str
+    node_name: str
+    manager: str
+    registerIp: str
+    ip: str
+    mergedSum: str
+    group: List[str]
+    configSum: str
+    status: AgentStatus
+    name: str
+    id: str
+    version: str
+    status_code: int = 0
+
+
+@dataclass
+class AgentResponseData(ResponseData):
+    affected_items: List[Agent]
+
+
+@dataclass
+class AgentResponse(APIResponse):
+    data: AgentResponseData
+
+
 class AgentsManager(ResourceManagerInterface):
     def __init__(self, client: AsyncClientInterface):
         """
@@ -153,7 +197,7 @@ class AgentsManager(ResourceManagerInterface):
 
     async def list(
         self, list_agent_params: Optional[ListAgentsQueryParams] = None, **kwargs
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Retrieve a list of agents.
 
@@ -182,7 +226,7 @@ class AgentsManager(ResourceManagerInterface):
                 setattr(list_agent_params, param, value)
         params = list_agent_params.to_query_dict()
         res = await self.async_request_builder.get(endpoint, params)
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def list_distinct(
@@ -190,7 +234,7 @@ class AgentsManager(ResourceManagerInterface):
         fields: Optional[List[str]] = None,
         list_agents_distinct_params: Optional[ListAgentsDistinctQueryParams] = None,
         **kwargs,
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         List all the different combinations that agents have for the selected fields.
 
@@ -233,14 +277,14 @@ class AgentsManager(ResourceManagerInterface):
         res = await self.async_request_builder.get(
             V4ApiPaths.LIST_AGENTS_DISTINCT.value, params
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def list_outdated(
         self,
         list_outdated_agents_params: Optional[ListOutdatedAgentsQueryParams] = None,
         **kwargs,
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Return the list of outdated agents.
 
@@ -273,7 +317,7 @@ class AgentsManager(ResourceManagerInterface):
         res = await self.async_request_builder.get(
             V4ApiPaths.LIST_OUTDATED_AGENTS.value, params
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def list_without_group(
@@ -315,7 +359,7 @@ class AgentsManager(ResourceManagerInterface):
         res = await self.async_request_builder.get(
             V4ApiPaths.LIST_AGENTS_WITHOUT_GROUP.value, params
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def delete(
@@ -348,7 +392,7 @@ class AgentsManager(ResourceManagerInterface):
         res = await self.async_request_builder.delete(
             V4ApiPaths.DELETE_AGENTS.value, delete_agents_params
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def add(
@@ -411,7 +455,7 @@ class AgentsManager(ResourceManagerInterface):
         wait_for_complete: bool = False,
         groups_list: Optional[List[str]] = None,
         group_id: Optional[str] = None,
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Remove the agent from all groups or a list of them, one group given its name or id.
         The agent will automatically revert to the default group if it is removed from all its assigned groups.
@@ -436,7 +480,7 @@ class AgentsManager(ResourceManagerInterface):
         res = await self.async_request_builder.delete(
             resource.value, query_params=params, path_params=path_params
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def assign_agent_to_group(
@@ -446,7 +490,7 @@ class AgentsManager(ResourceManagerInterface):
         force_single_group: bool,
         pretty: bool = False,
         wait_for_complete: bool = False,
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Assign an agent to a specified group
         """
@@ -463,12 +507,12 @@ class AgentsManager(ResourceManagerInterface):
             query_params=params,
             path_params=path_parameters,
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def get_key(
         self, agent_id: str, pretty: bool = False, wait_for_complete: bool = False
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Return the key of an agent.
         """
@@ -479,12 +523,12 @@ class AgentsManager(ResourceManagerInterface):
         res = await self.async_request_builder.get(
             V4ApiPaths.GET_KEY.value, query_params=params, path_params=path_parameters
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def restart_agent(
         self, agent_id: str, pretty: bool = False, wait_for_complete: bool = False
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Restart the specified agent.
         """
@@ -497,7 +541,7 @@ class AgentsManager(ResourceManagerInterface):
             query_params=params,
             path_params=path_parameters,
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def get_wazuh_daemon_stats(
@@ -506,7 +550,7 @@ class AgentsManager(ResourceManagerInterface):
         daemons_list: Optional[List[str]] = None,
         pretty: bool = False,
         wait_for_complete: bool = False,
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Get Wazuh daemon stats from an agent.
         """
@@ -521,7 +565,7 @@ class AgentsManager(ResourceManagerInterface):
             query_params=params,
             path_params=path_parameters,
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def get_agent_component_stats(
@@ -530,7 +574,7 @@ class AgentsManager(ResourceManagerInterface):
         component: StatsComponent,
         pretty: bool = False,
         wait_for_complete: bool = False,
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Return Wazuh's `component` statistical information from agent `agent_id`.
         """
@@ -546,7 +590,7 @@ class AgentsManager(ResourceManagerInterface):
             query_params=params,
             path_params=path_parameters,
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     def upgrade_agents(self):
@@ -564,7 +608,7 @@ class AgentsManager(ResourceManagerInterface):
         group_id: str,
         pretty: bool = False,
         wait_for_complete: bool = False,
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Remove all agents assignment or a list of them from the specified group.
         """
@@ -577,7 +621,7 @@ class AgentsManager(ResourceManagerInterface):
         res = await self.async_request_builder.delete(
             V4ApiPaths.REMOVE_AGENTS_FROM_GROUP.value, query_params=params
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def assign_agents_to_group(
@@ -587,7 +631,7 @@ class AgentsManager(ResourceManagerInterface):
         force_single_group: bool = False,
         pretty: bool = False,
         wait_for_complete: bool = False,
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Assign all agents or a list of them to the specified group.
         """
@@ -601,12 +645,12 @@ class AgentsManager(ResourceManagerInterface):
         res = await self.async_request_builder.put(
             V4ApiPaths.ASSIGN_AGENT_TO_GROUP.value, query_params=params
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def restart_agents_in_group(
         self, group_id: str, pretty: bool = False, wait_for_complete: bool = False
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Restart all agents which belong to a given group.
         """
@@ -619,7 +663,7 @@ class AgentsManager(ResourceManagerInterface):
             path_params=path_parameters,
             query_params=params,
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def add_agent_full(
@@ -664,7 +708,7 @@ class AgentsManager(ResourceManagerInterface):
 
     async def restart_agents_in_node(
         self, node_id: str, pretty: bool = False, wait_for_complete: bool = False
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Restart all agents which belong to a specific given node.
         """
@@ -677,7 +721,7 @@ class AgentsManager(ResourceManagerInterface):
             query_params=params,
             path_params=path_parameters,
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def _restart_or_reconnect_agents(
@@ -706,7 +750,7 @@ class AgentsManager(ResourceManagerInterface):
         agents_list: List[str],
         pretty: bool = False,
         wait_for_complete: bool = False,
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Force reconnect all agents or a list of them.
         """
@@ -716,7 +760,7 @@ class AgentsManager(ResourceManagerInterface):
             agents_list=agents_list,
             wait_for_complete=wait_for_complete,
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def restart_agents(
@@ -724,7 +768,7 @@ class AgentsManager(ResourceManagerInterface):
         agents_list: List[str],
         pretty: bool = False,
         wait_for_complete: bool = False,
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Restart all agents or a list of them.
         """
@@ -734,7 +778,7 @@ class AgentsManager(ResourceManagerInterface):
             agents_list=agents_list,
             wait_for_complete=wait_for_complete,
         )
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
     
     async def _summarize_agents_item(self, item: Literal["os", "status"], pretty: bool = False, wait_for_complete: bool = False
@@ -760,21 +804,21 @@ class AgentsManager(ResourceManagerInterface):
 
     async def summarize_agents_os(
         self, pretty: bool = False, wait_for_complete: bool = False
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Return a summary of the OS of available agents
         """
         res = await self._summarize_agents_item(item="os", pretty=pretty, wait_for_complete=wait_for_complete)
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def summarize_agents_status( self, pretty: bool = False, wait_for_complete: bool = False
-    ) -> AgentResponse:
+    ) -> APIResponse:
         """
         Return a summary of the connection and groups configuration synchronization statuses of available agents
         """
         res = await self._summarize_agents_item(item="status", pretty=pretty, wait_for_complete=wait_for_complete)
-        response = AgentResponse(**res)
+        response = APIResponse(**res)
         return response
 
     async def get_upgrade_results(self):

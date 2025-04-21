@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List
-from .enums import AgentStatus, GroupConfigStatus
+from typing import List, Any
 
 @dataclass
 class Error:
@@ -16,48 +15,15 @@ class FailedItem:
 
 
 @dataclass
-class OS:
-    arch: str
-    minor: str
-    codename: str
-    version: str
-    platform: str
-    uname: str
-    name: str
-    major: str
-
-
-
-@dataclass
-class Agent:
-    os: OS
-    group_config_status: GroupConfigStatus
-    lastKeepAlive: str
-    dateAdd: str
-    node_name: str
-    manager: str
-    registerIp: str
-    ip: str
-    mergedSum: str
-    group: List[str]
-    configSum: str
-    status: AgentStatus
-    name: str
-    id: str
-    version: str
-    status_code: int = 0
-
-
-@dataclass
 class ResponseData:
     total_affected_items: int
     failed_items: List[FailedItem]
     total_failed_items: int
-    affected_items: List[Agent]
+    affected_items: List[Any]
 
 
 @dataclass
-class AgentResponse:
+class APIResponse:
     message: str
     error: int
     data: ResponseData
